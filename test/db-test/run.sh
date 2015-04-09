@@ -60,7 +60,7 @@ node $PREFIX/util/conf.js
 # main body that iterates over all dbs
 for DB in ${DBS[@]}
 do
-    bash $PREFIX/clean.sh
+    bash $PREFIX/clean.sh "${ARGS[@]}"
 
     LINKED=true
     for VAR in ${LINKLESS[@]}
@@ -129,7 +129,7 @@ do
     echo "STOP ALL AND CLEAN BEFORE NEXT"
     read
     echo 
-    bash $PREFIX/clean.sh -prompt
+    bash $PREFIX/clean.sh "${ARGS[@]}" -prompt
 echo
 done
 

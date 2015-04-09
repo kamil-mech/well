@@ -10,6 +10,9 @@ if [[ "$QUERY" == "-a" ]]; then
   OUTPUTLINES=0
 fi
 
+EEXIST=$(bash $PREFIX/file-exist.sh)
+if [[ "$EEXIST" = false ]]; then node $PREFIX/conf.js; fi
+
 FILE=$(bash $PREFIX/read-inspect.sh -nk conf)
 
 # these conditions are a mess. need to clean them up

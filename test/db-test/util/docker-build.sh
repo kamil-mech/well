@@ -1,6 +1,6 @@
 #!/bin/bash
 PREFIX="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-WORKDIR=$(bash $PREFIX/../util/conf-obtain.sh app workdir)
+WORKDIR=$(bash $PREFIX/conf-obtain.sh app workdir)
 
 DFILES=$(bash $PREFIX/conf-obtain.sh dockbuilds -a)
 FILENO=$(bash $PREFIX/split.sh "$DFILES" "@" 0)

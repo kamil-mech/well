@@ -85,9 +85,8 @@ module.exports = {
       // syntax: [image-tag] [path_to_dockerfile]
       dockbuilds:['well-app .'],
       // extra files to be erased on cleanup
-      cleanups:['this/location/this.file.out',
-                'temp/not.needed.log',
-                'that/dump/folder'] // TODO
+      // uses prevention mechanisms to avoid self-destruction
+      cleanups:['test/unit-db']
   },
 
   // options for memcached
