@@ -14,12 +14,15 @@ dbs:
 * when no dbs specified, it tests them all
 
 flags:
+  -c          specify config file
   -dbs        specify dbs
   -fd         force docker pull
   -fb         force app build
   -tu         unit test only
   -ta         acceptance test only
   -nt         no test, just run everything
+  -ner        never erase temp files on cleanup
+  -aer        always erase temp files on cleanup (careful with use)
 
 e.g.
 

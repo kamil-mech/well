@@ -3,8 +3,13 @@ trap 'kill $$' SIGINT
 PREFIX="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 ARGS=$@
-if [[ "$ARGS" = "" ]]; then ARGS=$npm_config_args; fi
 IFS=' ' read -ra ARGS <<< "$ARGS"
+if [[ "$CFGFILE" == "" ]]; then export CFGFILE="$PWD/${ARGS[0]}"; fi
+MOREARGS="${ARGS[1]}"
+if [[ "$MOREARGS" == "" ]]; then
+    ARGS=$npm_config_args
+    IFS=' ' read -ra ARGS <<< "$ARGS"
+fi
 
 PROMPT=false
 NER=false
@@ -17,8 +22,6 @@ do
     if [[ "$VAR" = "-aer" ]]; then AER=true; fi
     if [[ "$VAR" = "-rcf" ]]; then RCF=true; fi
 done
-
-if [[ "$RCF" == true ]]; then echo "RELOAD CONFIG"; node $PREFIX/util/conf.js; fi
 
 if [[ "$NER" == false ]]; then
   echo
@@ -35,7 +38,7 @@ if [[ "$NER" == false ]]; then
     CONFIRM=$(bash $PREFIX/util/read-inspect.sh confirm)
   fi
   if [[ "$CONFIRM" = true || "$AER" == true ]]; then
-    echo "ERASING DOCKER BLOAT at /var/lib/docker/vfs/dir"
+    echo "ERASING DOCKER BLOAT AT /var/lib/docker/vfs/dir"
     sudo rm -rf /var/lib/docker/vfs/dir
   fi
 

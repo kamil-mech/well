@@ -2,7 +2,7 @@ var fs   = require('fs')
 var util = require('util')
 var _    = require('lodash')
 
-var options_path = '../../../options.well.js'
+var options_path = process.argv[2]
 var options      = require(options_path)
 var output       = ''
 

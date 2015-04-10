@@ -11,7 +11,7 @@ if [[ "$QUERY" == "-a" ]]; then
 fi
 
 EEXIST=$(bash $PREFIX/file-exist.sh)
-if [[ "$EEXIST" = false ]]; then node $PREFIX/conf.js; fi
+if [[ "$EEXIST" = false ]]; then node $PREFIX/conf.js $CFGFILE; fi
 
 FILE=$(bash $PREFIX/read-inspect.sh -nk conf)
 

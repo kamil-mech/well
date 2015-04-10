@@ -8,8 +8,13 @@ echo
 echo WORKDIR $PREFIX
 
 ARGS=$@
-if [[ "$ARGS" = "" ]]; then ARGS=$npm_config_args; fi
 IFS=' ' read -ra ARGS <<< "$ARGS"
+export CFGFILE="$PWD/${ARGS[0]}"
+MOREARGS="${ARGS[1]}"
+if [[ "$MOREARGS" == "" ]]; then
+    ARGS=$npm_config_args
+    IFS=' ' read -ra ARGS <<< "$ARGS"
+fi
 
 # read flags
 FD=false
@@ -55,7 +60,7 @@ declare -a LINKLESS=("mem" "jsonfile")
 declare -a IGNORED=()
 
 # generate conf
-node $PREFIX/util/conf.js
+node $PREFIX/util/conf.js $CFGFILE
 
 # main body that iterates over all dbs
 for DB in ${DBS[@]}
