@@ -50,13 +50,6 @@ module.exports =
 
       this.clean_db(si, function(err){
 
-        // confirm app has init a store
-        // si.act('role:entity, cmd:native', {ent:'entity'}, function(err, res){
-        //   if (_.isEmpty(res) && db !== 'mem-store'){
-        //     console.error('\nfailed to init ' + db + ' db\n')
-        //     process.exit(0)
-        //   }
-
           // init well.js
           si.use('user')
           si.use('../well', options)

@@ -70,6 +70,33 @@ module.exports = {
     schema:'/test/dbs/mysql.sql'
   },
 
+  'cassandra-store':{
+    name: 'well',
+    host: process.env.CASSANDRA_LINK_PORT_9160_TCP_ADDR || 'localhost',
+    port: process.env.CASSANDRA_LINK_PORT_9160_TCP_PORT || 9160
+  },
+
+  'couchdb-store':{
+    host: process.env.COUCHDB_LINK_PORT_12000_TCP_ADDR || 'localhost',
+    port: process.env.COUCHDB_LINK_PORT_12000_TCP_PORT || 12000
+  },
+
+  'orient-store':{
+    name: 'well',
+    host: process.env.ORIENT_LINK_PORT_2424_TCP_ADDR || 'localhost',
+    port: process.env.ORIENT_LINK_PORT_2424_TCP_PORT || 2424,
+    username: 'root',
+    password: '',
+    options: {}
+  },
+
+  'rethink-store':{
+    host: process.env.RETHINKDB_LINK_PORT_28015_TCP_ADDR || 'localhost',
+    port: process.env.RETHINKDB_LINK_PORT_28015_TCP_PORT || 28015,
+    authKey: "",
+    db: "well"
+  },
+
   // options for db test
   'dbt':{
       workdir:__dirname,
@@ -79,8 +106,8 @@ module.exports = {
       // if it exposes a port with -p, tester will automatically
       // wait for it to start listening before booting next.
       // use ; to add bash commands to be ran after image stops operating
-      // e.g. '-p 3333:3333 well-app ; echo Oh no!; read'
-      dockimages:['-p 3333:3333 --rm well-app'],
+      // e.g. '--rm well-app ; echo App stopped!; read'
+      dockimages:['--rm well-app'],
       // dockerfiles to be rebuilt when -fb is used
       // syntax: [image-tag] [path_to_dockerfile]
       dockbuilds:['well-app .'],

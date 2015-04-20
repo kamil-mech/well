@@ -8,9 +8,7 @@
     "test": "./node_modules/.bin/mocha test/acceptance.test.js",
     "posttest": "./node_modules/.bin/mocha test/unit.test.js",
     "atest": "./node_modules/.bin/mocha test/acceptance.test.js",
-    "utest": "./node_modules/.bin/mocha test/unit.test.js",
-    "dbt": "bash node_modules/seneca-db-test-harness/dbt/run.sh options.well.js",
-    "clean": "bash node_modules/seneca-db-test-harness/dbt/clean.sh options.well.js"
+    "utest": "./node_modules/.bin/mocha test/unit.test.js"
     },
   "repository": {
     "type": "git",
@@ -38,6 +36,10 @@
     "seneca-auth": "~0.4.0",
     "seneca-mongo-store": "~0.2.0",
     "seneca-jsonfile-store": "^0.2.2",
+    "seneca-cassandra-store": "^0.0.1",
+    "seneca-couchdb-store": "^0.0.2",
+    "seneca-orient-store": "^1.0.1",
+    "seneca-rethink-store": "^0.0.1",
     "seneca-redis-store": "^0.0.6",
     "seneca-mysql-store": "^0.4.0",
     "seneca-memcached-cache": "~0.2.0",
@@ -52,7 +54,6 @@
     "express-session": "^1.10.2"
   },
     "devDependencies": {
-    "seneca-db-test-harness": "^0.2.0",
     "mocha": "^2.1.0",
     "hippie": "^0.3.0"
   }
