@@ -53,7 +53,8 @@
     "body-parser": "^1.11.0",
     "express-session": "^1.10.2"
   },
-    "devDependencies": {
+  "devDependencies": {
+    "seneca-db-test-harness":"^0.2.3",
     "mocha": "^2.1.0",
     "hippie": "^0.3.0"
   }
