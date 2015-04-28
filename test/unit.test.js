@@ -8,10 +8,10 @@ var _      = require('lodash')
 var assert = require('assert')
 
 describe('happy', function() {
+  this.timeout(15000)
 
   it('happy main', function(done) {
-    helper.init(function(si) {
-
+    helper.init(done, function(si) {
       // Load event A from db
       ;si
         .make$('event')
@@ -67,13 +67,13 @@ describe('happy', function() {
       }) }) }) }) }) }) })
     })
   })
-
 })
 
 describe('data structure integrity', function() {
+  this.timeout(15000)
 
   it('cmd:whoami logged out', function(done) {
-    helper.init(function(si){
+    helper.init(done, function(si){
 
       // Load event A from DB
       ;si
@@ -91,7 +91,7 @@ describe('data structure integrity', function() {
 
   // Currently does not check for the avatar
   it ('cmd:whoami logged in', function(done){
-    helper.init(function(si){
+    helper.init(done, function(si){
 
       // Load event A from DB
       ;si
@@ -118,7 +118,7 @@ describe('data structure integrity', function() {
   })
 
   it('cmd:leader', function(done){
-    helper.init(function(si){
+    helper.init(done, function(si){
 
       // Load event A from db
       ;si
@@ -151,9 +151,9 @@ describe('data structure integrity', function() {
   })
 
   it ('cmd:members', function(done){
-    this.timeout(3000)
+    this.timeout(15000)
     
-    helper.init(function(si){
+    helper.init(done, function(si){
 
       // Load event A from db
       ;si
@@ -217,7 +217,7 @@ describe('data structure integrity', function() {
   })
 
   it ('cmd:member', function(done){
-    helper.init(function(si){
+    helper.init(done, function(si){
 
       // Load event A from db
       ;si
@@ -249,7 +249,7 @@ describe('data structure integrity', function() {
   })
 
   it ('cmd:createevent', function(done){
-    helper.init(function(si){
+    helper.init(done, function(si){
 
       // Create the event
       ;si
@@ -271,7 +271,7 @@ describe('data structure integrity', function() {
   })
 
   it('cmd:joinevent', function(done) {
-    helper.init(function(si) {
+    helper.init(done, function(si) {
       // Load event A from db
       ;si
         .make$('event')
@@ -306,9 +306,10 @@ describe('data structure integrity', function() {
 })
 
 describe('scenarios', function() {
+  this.timeout(15000)
 
   it('two teams play the game as intended', function(done) {
-    helper.init(function(si){
+    helper.init(done, function(si){
       
       // Load event A from db
       ;si
@@ -404,8 +405,9 @@ describe('scenarios', function() {
 })
 
 describe('clean-up', function() {
+  this.timeout(15000)
   it('clean db', function(done){
-    helper.init_empty(function(si){
+    helper.init_empty(done, function(si){
       helper.clean_db(si, function(err){
         done()
       })

@@ -14,7 +14,7 @@ CREATE TABLE sys_user (
   `email` varchar (255) DEFAULT NULL,
   `name` varchar (255) DEFAULT NULL,
   `active` tinyint (1) DEFAULT NULL,
-  `when` varchar (255) NOT NULL,
+  `when` varchar (255) DEFAULT NULL,
   `confirmed` tinyint (1) DEFAULT NULL,
   `confirmcode` varchar (255) DEFAULT NULL,
   `salt` varchar (255) DEFAULT NULL,

@@ -83,10 +83,10 @@ if (custom_dbs.indexOf(db) === -1) {
 }
 else
 {
-  var Harness = require('seneca-db-test-harness')
-  var harness = new Harness()
+  var SL = require('seneca-store-listen')
+  var sl = new SL()
 
-  harness.host(db, function(server_config){
+  sl.host(db, function(server_config){
     setTimeout(function(){
       seneca
       .client(server_config)

@@ -10,9 +10,9 @@ module.exports =
     var _  = require('lodash')
     var fs = require('fs')
 
-    this.init_empty = function(done) {
+    this.init_empty = function(handler, done) {
       var si = require('seneca')({
-        errhandler: done,
+        errhandler: handler,
         default_plugins:{'mem-store':false}
       })
 
@@ -55,12 +55,12 @@ module.exports =
           si.use('../well', options)
 
           done(si)
-        // })
       })
     }
 
-    this.init = function(done) {
-      this.init_empty(function(si){
+    this.init = function(handler, done) {
+var fid = (Math.random()* 1000).toString().substring(0, 3)
+      this.init_empty(handler, function(si){
 
       // add event A
       ;si
