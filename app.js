@@ -83,8 +83,7 @@ if (custom_dbs.indexOf(db) === -1) {
 }
 else
 {
-  var SL = require('seneca-store-listen')
-  var sl = new SL()
+  var sl = require('seneca-store-listen')()
 
   sl.host(db, function(server_config){
     setTimeout(function(){

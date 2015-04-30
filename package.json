@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "seneca-db-test-harness":"^0.3.0",
-    "seneca-store-listen":"^0.1.0",
+    "seneca-store-listen":"^0.1.1",
     "mocha": "^2.1.0",
     "hippie": "^0.3.0"
   }
