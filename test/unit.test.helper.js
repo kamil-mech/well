@@ -31,14 +31,24 @@ module.exports =
       console.log('using ' + db + ' db')
 
       var db_path = __dirname + '/unit-db/'
+
       // ensure db folder
       if (!fs.existsSync(db_path)) fs.mkdirSync(db_path)
-      db_path += db
-      if (!fs.existsSync(db_path)) fs.mkdirSync(db_path)
 
+      var base_path = db_path
       // setup db-specific args
       var db_args = {}
-      if (db === 'jsonfile-store') db_args = {folder:db_path}
+      if (db === 'jsonfile-store' || db === 'level-store') {
+        while (fs.existsSync(db_path)) {
+          id = (Math.random() * 1000).toString().substring(0, 3)
+          db_path = base_path + db + '-' + id
+          db_args = {folder:db_path}
+        }
+      } else db_path += db
+
+      // ensure db subfolder
+      if (!fs.existsSync(db_path)) fs.mkdirSync(db_path)
+
 
       if (ip && ip !== '' && port && port !== '') {
         db_args.host = ip

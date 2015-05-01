@@ -37,6 +37,7 @@
     "seneca-mongo-store": "~0.2.0",
     "seneca-jsonfile-store": "^0.2.2",
     "seneca-cassandra-store": "^0.0.1",
+    "seneca-level-store": "^0.2.1",
     "seneca-couchdb-store": "^0.0.2",
     "seneca-orient-store": "^1.0.1",
     "seneca-rethink-store": "^0.0.1",
@@ -54,8 +55,7 @@
     "express-session": "^1.10.2"
   },
   "devDependencies": {
-    "seneca-db-test-harness":"^0.3.0",
-    "seneca-store-listen":"^0.1.1",
+    "seneca-store-listen":"^0.1.2",
     "mocha": "^2.1.0",
     "hippie": "^0.3.0"
   }
