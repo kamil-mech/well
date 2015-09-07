@@ -9,6 +9,7 @@ module.exports =
 
     var _  = require('lodash')
     var fs = require('fs')
+    var self = this;
 
     this.init_empty = function(handler, done) {
       var si = require('seneca')({
@@ -71,6 +72,12 @@ module.exports =
     this.init = function(handler, done) {
 var fid = (Math.random()* 1000).toString().substring(0, 3)
       this.init_empty(handler, function(si){
+
+      self.entities = {
+        event: si.make$('event'),
+        team: si.make$('team'),
+        user: si.make$('sys/user')
+      }
 
       // add event A
       ;si

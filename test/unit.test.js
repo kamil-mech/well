@@ -6,65 +6,72 @@ var Helper = require('./unit.test.helper.js')
 var helper = new Helper();
 var _      = require('lodash')
 var assert = require('assert')
+var async = require('async')
+var util = require('util')
+
+function sfunc(qent, func, q, field, cb){
+  qent[func](q, function(err, res){
+    // err checking
+    if (err) return seneca.fail(err)
+    if (func === 'save$') {
+      // ensure output object contains all the fields from the input object
+      _.each(Object.keys(q), function(key){
+        assert.equal(q[key], res[key])
+      })
+    }
+    // expose res as field
+    if (field) context[field] = res;
+    cb(err, res, cb)
+  })
+}
 
 describe('happy', function() {
   this.timeout(15000)
 
   it('happy main', function(done) {
-    helper.init(done, function(si) {
-      // Load event A from db
-      ;si
-        .make$('event')
-        .load$({code:'ma'}, function(err, event){
-      // Load users from db
-      ;si
-        .make$('sys/user')
-        .list$(function(err, users){
-      // Insert all users into event A, team Red
-      si.util.recurse(users.length, function( index, next ){
-        si
-        .act('role:well, cmd:joinevent', {
-          user: users[index],
-          event: event,
-          tnum:0
-        }, next)
-      }, function(err, data){
+    helper.init(done, function(seneca) {
 
-      // Load team Red from event A
-      ;si
-        .make$('team')
-        .load$({event:event.id, num:0}, function(err, team){
-        // load all members of team Red
-        var util = require('util')
-        var members = []
-          _.each(team.users, function(user, nick) {
-            members.push(user)
-        })
-      // Load member 0
-      ;si
-        .make$('sys/user')
-        .load$({
-          name: members[0].name
-        }, function(err, member_zero) {
-      // Load member 1
-      ;si
-      .make$('sys/user')
-      .load$({
-        name: members[1].name
-      }, function(err, member_one) {
-      // Make the members exchange a card
-      ;si
-        .act('role:well, cmd:well', {
-          user: member_zero,
-          event: event,
-          other: member_one.nick,
-          card: event.users[member_one.nick].c
-        }, function(err, res){
+      var context = {}
+
+      async.series([
+          sfunc.bind(null, helper.entities.event, 'load$', { code:'ma' }, 'event'), // load event A from db
+          sfunc.bind(null, helper.entities.user, 'list$', {}, 'users'),             // load users from db
+          function(cb) {                                                     // insert all users into event A, team Red
+            seneca.util.recurse(users.length, function( index, next ){
+              seneca.act('role:well, cmd:joinevent', {
+                user: context.users[index],
+                event: context.event,
+                tnum:0
+              }, next)
+            }, cb)
+          },
+          sfunc.bind(null, helper.entities.team, 'load$', { event: context.event.id, num: 0 }, 'team'), // load team Red from event A
+          function(cb){
+            context.members = []
+              _.each(context.team.users, function(user) {
+                context.members.push(user)
+            })
+            cb()
+          },
+          sfunc.bind(null, helper.entities.user, 'load$', { name: context.members[0].name }, 'member_zero'), // Load member 0
+          sfunc.bind(null, helper.entities.user, 'load$', { name: context.members[1].name }, 'member_one'),  // Load member 1
+          sfunc.bind(null, seneca, 'act', { // Make the members exchange a card
+          role: well,
+          cmd: well,
+          user: context.member_zero,
+          event: context.event,
+          other: context.member_one.nick,
+          card: context.event.users[context.member_one.nick].c
+        }, 'wellres'),
+        function(cb){
           // Check if the points were added
-          assert.equal(res.team.numwells, 1)
-
-          done()
-      }) }) }) }) }) }) })
+          assert.equal(context.wellres.team.numwells, 1)
+          cb()
+        }
+      ], function(){
+        console.log('happy end1')
+        done()
+      });
     })
   })
 })
@@ -73,14 +80,14 @@ describe('data structure integrity', function() {
   this.timeout(15000)
 
   it('cmd:whoami logged out', function(done) {
-    helper.init(done, function(si){
+    helper.init(done, function(seneca){
 
       // Load event A from DB
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'},function(err,event){
       // Should return contents of event A
-      ;si
+      ;seneca
         .act('role:well,cmd:whoami',{event:event},function(err,res){
           assert.equal(res.event.name, event.name)
           
@@ -91,17 +98,17 @@ describe('data structure integrity', function() {
 
   // Currently does not check for the avatar
   it ('cmd:whoami logged in', function(done){
-    helper.init(done, function(si){
+    helper.init(done, function(seneca){
 
       // Load event A from DB
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'},function(err,event){
       // Load admin from DB
-      ;si
+      ;seneca
         .make('sys/user').load$({nick:'admin'}, function(err, user) {
       // Should return meta data object: {card:,avatar:,user:,team:,event:}
-      ;si
+      ;seneca
         .act('role:well, cmd:whoami', {
           user: user,
           event: event
@@ -118,19 +125,19 @@ describe('data structure integrity', function() {
   })
 
   it('cmd:leader', function(done){
-    helper.init(done, function(si){
+    helper.init(done, function(seneca){
 
       // Load event A from db
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'}, function(err, event){
       // Get list of teams in event A through cmd:leader
-      ;si
+      ;seneca
         .act('role:well, cmd:leader', {
           event: event
         }, function(err, leader){
       // Get list of teams in event A directly from db
-      ;si
+      ;seneca
         .make$('team')
         .list$({event:event.id}, function(err, dbteams){
             // Format both lists into arrays of names(leader does not contain id data)
@@ -153,19 +160,19 @@ describe('data structure integrity', function() {
   it ('cmd:members', function(done){
     this.timeout(15000)
     
-    helper.init(done, function(si){
+    helper.init(done, function(seneca){
 
       // Load event A from db
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'}, function(err, event){
       // Load users from db
-      ;si
+      ;seneca
         .make$('sys/user')
         .list$(function(err, users){
       // Insert all users into event A
-      si.util.recurse(users.length, function( index, next ){
-        si
+      seneca.util.recurse(users.length, function( index, next ){
+        seneca
         .act('role:well, cmd:joinevent', {
           user: users[index],
           event: event,
@@ -173,19 +180,19 @@ describe('data structure integrity', function() {
       }, function(err, data){
 
       // Load event A from db to refresh data
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'}, function(err, event){
       // Load the only team in event A from db
-      ;si
+      ;seneca
         .make$('team')
         .load$({event:event.id, num:0}, function(err, team){
       // Load a known user from that team
-      ;si
+      ;seneca
         .make$('sys/user')
         .load$({nick:'admin'}, function(err, admin){
       // Obtain members
-      ;si
+      ;seneca
         .act('role:well, cmd:members', {
             team: team,
             user: admin
@@ -217,24 +224,24 @@ describe('data structure integrity', function() {
   })
 
   it ('cmd:member', function(done){
-    helper.init(done, function(si){
+    helper.init(done, function(seneca){
 
       // Load event A from db
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'}, function(err, event){
       // Load admin from db
-      ;si
+      ;seneca
         .make$('sys/user')
         .load$({nick:'admin'}, function(err, admin){
       // Insert admin to event A
-      ;si
+      ;seneca
         .act('role:well, cmd:joinevent', {
           user: admin,
           event: event
         }, function(err, res) {
       // Should return meta data object: {nick:,name:,avatar}
-      ;si
+      ;seneca
         .act('role:well, cmd:member', {
             other: admin.nick,
             event: event
@@ -249,10 +256,10 @@ describe('data structure integrity', function() {
   })
 
   it ('cmd:createevent', function(done){
-    helper.init(done, function(si){
+    helper.init(done, function(seneca){
 
       // Create the event
-      ;si
+      ;seneca
         .act('role:well, cmd:createevent', {
               numcards: 52,
               numteams: 2,
@@ -271,17 +278,17 @@ describe('data structure integrity', function() {
   })
 
   it('cmd:joinevent', function(done) {
-    helper.init(done, function(si) {
+    helper.init(done, function(seneca) {
       // Load event A from db
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'}, function(err, event){
       // Load admin from db
-      ;si
+      ;seneca
         .make$('sys/user')
         .load$({nick:'admin'}, function(err, admin){
       // Insert admin to event A
-      ;si
+      ;seneca
         .act('role:well, cmd:joinevent', {
           user: admin,
           event: event,
@@ -293,7 +300,7 @@ describe('data structure integrity', function() {
          assert.equal(res.team.name, 'Red')
          assert.equal(res.event.code, 'ma')
       // Should contain admin
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'}, function(err, event){
           assert.equal(event.users.admin !== undefined, true)
@@ -309,14 +316,14 @@ describe('scenarios', function() {
   this.timeout(15000)
 
   it('two teams play the game as intended', function(done) {
-    helper.init(done, function(si){
+    helper.init(done, function(seneca){
       
       // Load event A from db
-      ;si
+      ;seneca
         .make$('event')
         .load$({code:'ma'}, function(err, event){
       // Load users from db
-      ;si
+      ;seneca
         .make$('sys/user')
         .list$(function(err, users){
 
@@ -329,42 +336,42 @@ describe('scenarios', function() {
         // All others go to team Green
         var tnum = 0
         if (users.indexOf(user) > 2) tnum = 1
-      ;si
+      ;seneca
         .act('role:well, cmd:joinevent', {
           user: user,
           event: event,
           tnum:tnum
         }, function(err, res) {
           // Populate temp arrays while populating the event
-          // since it's easier and cleaner this way
+          // since it's easenecaer and cleaner this way
           if (user.events[event.id].t === 0) team_r.push(user)
           else if (user.events[event.id].t === 1) team_g.push(user)
 
           if (users.indexOf(user) < users.length - 1) return // <-- Loop control
 
       // Exchange some cards
-      ;si
+      ;seneca
         .act('role:well, cmd:well', {
           user: team_r[0],
           event: event,
           other: team_r[1].nick,
           card: event.users[team_r[1].nick].c
         }, function(err, res){
-      ;si
+      ;seneca
         .act('role:well, cmd:well', {
           user: team_r[1],
           event: event,
           other: team_r[2].nick,
           card: event.users[team_r[2].nick].c
         }, function(err, res){
-      ;si
+      ;seneca
         .act('role:well, cmd:well', {
           user: team_r[2],
           event: event,
           other: team_r[0].nick,
           card: event.users[team_r[0].nick].c
         }, function(err, res){
-      ;si
+      ;seneca
         .act('role:well, cmd:well', {
           user: team_r[2],
           event: event,
@@ -374,21 +381,21 @@ describe('scenarios', function() {
           // Check if the points were added
           assert.equal(res.team.numwells, 4)
           
-      ;si
+      ;seneca
         .act('role:well, cmd:well', {
           user: team_g[0],
           event: event,
           other: team_g[1].nick,
           card: event.users[team_g[1].nick].c
         }, function(err, res){
-      ;si
+      ;seneca
         .act('role:well, cmd:well', {
           user: team_g[1],
           event: event,
           other: team_g[2].nick,
           card: event.users[team_g[2].nick].c
         }, function(err, res){
-      ;si
+      ;seneca
         .act('role:well, cmd:well', {
           user: team_g[2],
           event: event,
@@ -407,8 +414,8 @@ describe('scenarios', function() {
 describe('clean-up', function() {
   this.timeout(15000)
   it('clean db', function(done){
-    helper.init_empty(done, function(si){
-      helper.clean_db(si, function(err){
+    helper.init_empty(done, function(seneca){
+      helper.clean_db(seneca, function(err){
         done()
       })
     })
