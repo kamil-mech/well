@@ -89,7 +89,7 @@ describe('data structure integrity', function() {
       scontext = {}
       async.series([
         function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
-        function(cb){ helper.entities.user.load$({nick:'admin'}, after.bind(null, cb, 'user'))}, // load admin from db
+        function(cb){ helper.entities.user.load$({ nick:'admin' }, after.bind(null, cb, 'user'))},  // load admin from db
         // call whoami for this user and event
         function(cb){ seneca.act({ role: 'well', cmd: 'whoami', event: scontext.event, user: scontext.user }, after.bind(null, cb, 'whoami'))},
         // should return meta data object: {card:,avatar:,user:,team:,event:}
@@ -169,15 +169,15 @@ describe('data structure integrity', function() {
           _.each(scontext.team.users, function(teamuser) {
             if (teamuser.name != 'admin') dbnames.push(teamuser.name)
           })
-          // Storing returned members in an array
+          // storing returned members in an array
           var memnames = []
           _.each(scontext.members.members, function(member) {
             memnames.push(member.name)
           })
-          // Make sure does not contain admin
+          // make sure does not contain admin
           assert.equal((dbnames.indexOf('admin') === -1), true)
           assert.equal((memnames.indexOf('admin') === -1), true)
-          // Make sure db elements are same as returned elements
+          // make sure db elements are same as returned elements
           assert.deepEqual(dbnames, memnames)
           cb()
         }
@@ -188,32 +188,20 @@ describe('data structure integrity', function() {
   it ('cmd:member', function(done){
     helper.init(done, function(seneca){
 
-      // Load event A from db
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'}, function(err, event){
-      // Load admin from db
-      ;seneca
-        .make$('sys/user')
-        .load$({nick:'admin'}, function(err, admin){
-      // Insert admin to event A
-      ;seneca
-        .act('role:well, cmd:joinevent', {
-          user: admin,
-          event: event
-        }, function(err, res) {
-      // Should return meta data object: {nick:,name:,avatar}
-      ;seneca
-        .act('role:well, cmd:member', {
-            other: admin.nick,
-            event: event
-          }, function(err, res) {
-            assert.equal(res.nick, admin.nick)
-            assert.equal(res.name, admin.name)
-            assert.equal((res.avatar === false && admin.avatar === undefined), true)
-
-            done()
-      }) }) }) })
+      scontext = {}
+      async.series([
+        function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
+        function(cb){ helper.entities.user.load$({nick:'admin'}, after.bind(null, cb, 'admin'))},  // load admin from db
+        function(cb){ seneca.act({ role: 'well', cmd: 'joinevent', user: scontext.admin, event: scontext.event }, after.bind(null, cb, 'joinres'))},
+        function(cb){ seneca.act({ role: 'well', cmd: 'member', other: scontext.admin.nick, event: scontext.event }, after.bind(null, cb, 'member'))},
+        // should return meta data object: {nick:,name:,avatar}
+        function(cb){
+            assert.equal(scontext.member.nick, scontext.admin.nick)
+            assert.equal(scontext.member.name, scontext.admin.name)
+            assert.equal((scontext.member.avatar === false && scontext.admin.avatar === undefined), true)
+          cb()
+        }
+      ], done);
     })
   })
 
