@@ -11,21 +11,12 @@ var util = require('util')
 
 var scontext = {};
 
-function sfunc(qent, func, q, field, cb){
-  if (_.isFunction(q)) q = q();
-  qent[func](q, function(err, res){
-    // err checking
-    if (err) return seneca.fail(err)
-    if (func === 'save$') {
-      // ensure output object contains all the fields from the input object
-      _.each(Object.keys(q), function(key){
-        assert.equal(q[key], res[key])
-      })
-    }
-    // expose res as field
-    if (field) scontext[field] = res;
-    cb(err, res, cb)
-  })
+function after(cb, field, err, res){
+  // err checking
+  if (err) return seneca.fail(err)
+  // expose res as field
+  if (field) scontext[field] = res;
+  return cb(err, res)
 }
 
 describe('happy', function() {
@@ -35,11 +26,11 @@ describe('happy', function() {
     helper.init(done, function(seneca) {
 
       scontext = {}
-
       async.series([
-          sfunc.bind(null, helper.entities.event, 'load$', { code:'ma' }, 'event'), // load event A from db
-          sfunc.bind(null, helper.entities.user, 'list$', {}, 'users'),             // load users from db
-          function(cb) {                                                     // insert all users into event A, team Red
+          function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
+          function(cb){ helper.entities.user.list$({}, after.bind(null, cb, 'users'))},             // load users from db
+          // insert all users into event A, team Red
+          function(cb) {
             seneca.util.recurse(scontext.users.length, function( index, next ){
               seneca.act('role:well, cmd:joinevent', {
                 user: scontext.users[index],
@@ -48,33 +39,30 @@ describe('happy', function() {
               }, next)
             }, cb)
           },
-          sfunc.bind(null, helper.entities.team, 'load$', function() { return { event: scontext.event.id, num: 0 } }, 'team'), // load team Red from event A
-          function(cb){
-            scontext.members = []
+          function(cb){ helper.entities.team.load$({ event: scontext.event.id, num: 0 }, after.bind(null, cb, 'team'))}, // load team Red from event A          function(cb){
+          // change team users' into array
+          function(cb) {
+            var members = []
               _.each(scontext.team.users, function(user) {
-                scontext.members.push(user)
+                members.push(user)
             })
+            scontext.team.users = members
             cb()
           },
-          sfunc.bind(null, helper.entities.user, 'load$', function() { return { name: scontext.members[0].name } }, 'member_zero'), // Load member 0
-          sfunc.bind(null, helper.entities.user, 'load$', function() { return { name: scontext.members[1].name } }, 'member_one'),  // Load member 1
-          sfunc.bind(null, seneca, 'act', function() { return { // Make the members exchange a card
-          role: 'well',
-          cmd: 'well',
-          user: scontext.member_zero,
-          event: scontext.event,
-          other: scontext.member_one.nick,
-          card: scontext.event.users[scontext.member_one.nick].c
-        } }, 'wellres'),
-        function(cb){
-          // Check if the points were added
-          assert.equal(scontext.wellres.team.numwells, 1)
-          cb()
-        }
-      ], function(){
-        console.log('happy end1')
-        done()
-      });
+          function(cb){ helper.entities.user.load$({ name: scontext.team.users[0].name }, after.bind(null, cb, 'member_zero'))}, // Load member 0
+          function(cb){ helper.entities.user.load$({ name: scontext.team.users[1].name }, after.bind(null, cb, 'member_one'))},  // Load member 1
+          // Exchange members' cards
+          function(cb){ seneca.act({
+            role: 'well',
+            cmd: 'well',
+            user: scontext.member_zero,
+            event: scontext.event,
+            other: scontext.member_one.nick,
+            card: scontext.event.users[scontext.member_one.nick].c
+          }, after.bind(null, cb, 'wellres'))
+        },
+        function(cb){ assert.equal(scontext.wellres.team.numwells, 1); cb() }, // check if the points were added
+      ], done);
     })
   })
 })
@@ -85,17 +73,12 @@ describe('data structure integrity', function() {
   it('cmd:whoami logged out', function(done) {
     helper.init(done, function(seneca){
 
-      // Load event A from DB
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'},function(err,event){
-      // Should return contents of event A
-      ;seneca
-        .act('role:well,cmd:whoami',{event:event},function(err,res){
-          assert.equal(res.event.name, event.name)
-          
-          done()
-      }) })
+      scontext = {}
+      async.series([
+        function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))},                          // load event A from db
+        function(cb){ seneca.act({ role: 'well', cmd: 'whoami', event: scontext.event }, after.bind(null, cb, 'whoami'))}, // call whoami for this event
+        function(cb){ assert.equal(scontext.whoami.event.name, scontext.event.name); cb() }                                // should return contents of event A
+      ], done);
     })
   })
 
