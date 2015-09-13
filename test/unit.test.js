@@ -108,33 +108,29 @@ describe('data structure integrity', function() {
   it('cmd:leader', function(done){
     helper.init(done, function(seneca){
 
-      // Load event A from db
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'}, function(err, event){
-      // Get list of teams in event A through cmd:leader
-      ;seneca
-        .act('role:well, cmd:leader', {
-          event: event
-        }, function(err, leader){
-      // Get list of teams in event A directly from db
-      ;seneca
-        .make$('team')
-        .list$({event:event.id}, function(err, dbteams){
-            // Format both lists into arrays of names(leader does not contain id data)
-            dbteams = dbteams.map(function(element) {
-              return element.name
-            })
-            leader = leader.teams.map(function(element) {
-              return element.name
-            })
-          // Compare team names
-          assert.deepEqual(dbteams, leader)
-          // Make sure an unwanted element is not contained within the cmd:leader response
-          assert.equal(leader.indexOf('Blue'), -1)
-
-          done()
-      }) }) })
+      scontext = {}
+      async.series([
+        function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
+        // get list of teams in event A through cmd:leader
+        function(cb){ seneca.act({ role: 'well', cmd: 'leader', event: scontext.event }, after.bind(null, cb, 'leader'))},
+        // get list of teams in event A directly from db
+        function(cb){ helper.entities.team.list$({ event: scontext.event.id }, after.bind(null, cb, 'dbteams'))},
+        // compare
+        function(cb){
+          // format both lists into arrays of names(leader does not contain id data)
+          scontext.dbteams = scontext.dbteams.map(function(element) {
+            return element.name
+          })
+          scontext.leader = scontext.leader.teams.map(function(element) {
+            return element.name
+          })
+          // compare team names
+          assert.deepEqual(scontext.dbteams, scontext.leader)
+          // make sure an unwanted element is not contained within the cmd:leader response
+          assert.equal(scontext.leader.indexOf('Blue'), -1)
+          cb()
+        }
+      ], done);
     })
   })
 
