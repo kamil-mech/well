@@ -191,8 +191,10 @@ describe('data structure integrity', function() {
       scontext = {}
       async.series([
         function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
-        function(cb){ helper.entities.user.load$({nick:'admin'}, after.bind(null, cb, 'admin'))},  // load admin from db
+        function(cb){ helper.entities.user.load$({nick:'admin'}, after.bind(null, cb, 'admin'))}, // load admin from db
+        // insert admin to event A
         function(cb){ seneca.act({ role: 'well', cmd: 'joinevent', user: scontext.admin, event: scontext.event }, after.bind(null, cb, 'joinres'))},
+        // call member for user admin in this event
         function(cb){ seneca.act({ role: 'well', cmd: 'member', other: scontext.admin.nick, event: scontext.event }, after.bind(null, cb, 'member'))},
         // should return meta data object: {nick:,name:,avatar}
         function(cb){
@@ -229,34 +231,23 @@ describe('data structure integrity', function() {
 
   it('cmd:joinevent', function(done) {
     helper.init(done, function(seneca) {
-      // Load event A from db
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'}, function(err, event){
-      // Load admin from db
-      ;seneca
-        .make$('sys/user')
-        .load$({nick:'admin'}, function(err, admin){
-      // Insert admin to event A
-      ;seneca
-        .act('role:well, cmd:joinevent', {
-          user: admin,
-          event: event,
-          tnum: 0
-        }, function(err, res) {
-        // Should return meta data object: {card:, user:, team:, event:}
-         assert.equal((res.card >= 0 && res.card < event.numcards), true)
-         assert.equal(res.user.nick, 'admin')
-         assert.equal(res.team.name, 'Red')
-         assert.equal(res.event.code, 'ma')
-      // Should contain admin
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'}, function(err, event){
-          assert.equal(event.users.admin !== undefined, true)
 
-          done()
-      }) }) }) })
+      scontext = {}
+      async.series([
+        function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
+        function(cb){ helper.entities.user.load$({nick:'admin'}, after.bind(null, cb, 'admin'))}, // load admin from db
+        // insert admin to event A
+        function(cb){ seneca.act({ role: 'well', cmd: 'joinevent', user: scontext.admin, event: scontext.event, tnum: 0 }, after.bind(null, cb, 'joinres'))},
+        // should return meta data object: {card:, user:, team:, event:}
+        function(cb){
+          console.log('scontext.joinres', util.inspect(scontext.joinres))
+          assert.equal((scontext.joinres.card >= 0 && scontext.joinres.card < scontext.event.numcards), true)
+          assert.equal(scontext.joinres.user.nick, 'admin')
+          assert.equal(scontext.joinres.team.name, 'Red')
+          assert.equal(scontext.joinres.event.code, 'ma')
+          cb()
+        }
+      ], done);
     })
   })
 
