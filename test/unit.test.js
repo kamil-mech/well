@@ -139,64 +139,49 @@ describe('data structure integrity', function() {
     
     helper.init(done, function(seneca){
 
-      // Load event A from db
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'}, function(err, event){
-      // Load users from db
-      ;seneca
-        .make$('sys/user')
-        .list$(function(err, users){
-      // Insert all users into event A
-      seneca.util.recurse(users.length, function( index, next ){
-        seneca
-        .act('role:well, cmd:joinevent', {
-          user: users[index],
-          event: event,
-        }, next)
-      }, function(err, data){
-
-      // Load event A from db to refresh data
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'}, function(err, event){
-      // Load the only team in event A from db
-      ;seneca
-        .make$('team')
-        .load$({event:event.id, num:0}, function(err, team){
-      // Load a known user from that team
-      ;seneca
-        .make$('sys/user')
-        .load$({nick:'admin'}, function(err, admin){
-      // Obtain members
-      ;seneca
-        .act('role:well, cmd:members', {
-            team: team,
-            user: admin
-          }, function(err, members) {
-        // Compare db against members return data:
-
-        // Store db members in an array and
-        // remove admin from list which is db clone.
-        // Admin is being removed, because it's supplied
-        // into members call as the user to be ignored
-        var dbnames = []
-        _.each(team.users, function(teamuser) {
-          if (teamuser.name != 'admin') dbnames.push(teamuser.name)
-        })
-        // Storing returned members in an array
-        var memnames = []
-        _.each(members.members, function(member) {
-          memnames.push(member.name)
-        })
-        // Make sure does not contain admin
-        assert.equal((dbnames.indexOf('admin') === -1), true)
-        assert.equal((memnames.indexOf('admin') === -1), true)
-        // Make sure db elements are same as returned elements
-        assert.deepEqual(dbnames, memnames)
-
-        done()
-      }) }) }) }) }) }) })
+      scontext = {}
+      async.series([
+        function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
+        function(cb){ helper.entities.user.list$({}, after.bind(null, cb, 'users'))},             // load users from db
+        // insert all users into event A
+        function(cb){
+          seneca.util.recurse(scontext.users.length, function( index, next ){
+            seneca
+            .act('role:well, cmd:joinevent', {
+              user: scontext.users[index],
+              event: scontext.event,
+            }, next)
+          }, cb)
+        },
+        function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))},   // load event A from db to refresh data
+        // load the only team in event A from db
+        function(cb){ helper.entities.team.load$({ event: scontext.event.id, num: 0 }, after.bind(null, cb, 'team'))},
+        function(cb){ helper.entities.user.load$({ nick:'admin' }, after.bind(null, cb, 'admin'))}, // load a known user from that team
+        // obtain members
+        function(cb){ seneca.act({ role: 'well', cmd: 'members', team: scontext.team, user: scontext.admin }, after.bind(null, cb, 'members'))},
+        // compare db against members return data
+        function(cb){
+          // store db members in an array and
+          // remove admin from list which is db clone.
+          // admin is being removed, because it's supplied
+          // into members call as the user to be ignored
+          var dbnames = []
+          _.each(scontext.team.users, function(teamuser) {
+            if (teamuser.name != 'admin') dbnames.push(teamuser.name)
+          })
+          // Storing returned members in an array
+          var memnames = []
+          _.each(scontext.members.members, function(member) {
+            memnames.push(member.name)
+          })
+          // Make sure does not contain admin
+          assert.equal((dbnames.indexOf('admin') === -1), true)
+          assert.equal((memnames.indexOf('admin') === -1), true)
+          // Make sure db elements are same as returned elements
+          assert.deepEqual(dbnames, memnames)
+          cb()
+        }
+      ], done);
     })
   })
 
