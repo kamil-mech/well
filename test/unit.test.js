@@ -39,7 +39,7 @@ describe('happy', function() {
               }, next)
             }, cb)
           },
-          function(cb){ helper.entities.team.load$({ event: scontext.event.id, num: 0 }, after.bind(null, cb, 'team'))}, // load team Red from event A          function(cb){
+          function(cb){ helper.entities.team.load$({ event: scontext.event.id, num: 0 }, after.bind(null, cb, 'team'))}, // load team Red from event A
           // change team users' into array
           function(cb) {
             var members = []
@@ -86,27 +86,22 @@ describe('data structure integrity', function() {
   it ('cmd:whoami logged in', function(done){
     helper.init(done, function(seneca){
 
-      // Load event A from DB
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'},function(err,event){
-      // Load admin from DB
-      ;seneca
-        .make('sys/user').load$({nick:'admin'}, function(err, user) {
-      // Should return meta data object: {card:,avatar:,user:,team:,event:}
-      ;seneca
-        .act('role:well, cmd:whoami', {
-          user: user,
-          event: event
-        }, function(err, res) {
-          assert.equal(res.card, user.events[event.id].c)
-          assert.equal((user.avatar === undefined && res.avatar === false), true)
-          assert.equal(res.user.id, user.id)
-          assert.equal(res.team.num, user.events[event.id].t)
-          assert.equal(res.event.id, event.id)
-            
-          done()
-      }) }) })
+      scontext = {}
+      async.series([
+        function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
+        function(cb){ helper.entities.user.load$({nick:'admin'}, after.bind(null, cb, 'user'))}, // load admin from db
+        // call whoami for this user and event
+        function(cb){ seneca.act({ role: 'well', cmd: 'whoami', event: scontext.event, user: scontext.user }, after.bind(null, cb, 'whoami'))},
+        // should return meta data object: {card:,avatar:,user:,team:,event:}
+        function(cb){
+          assert.equal(scontext.whoami.card, scontext.user.events[scontext.event.id].c)
+          assert.equal((scontext.user.avatar === undefined && scontext.whoami.avatar === false), true)
+          assert.equal(scontext.whoami.user.id, scontext.user.id)
+          assert.equal(scontext.whoami.team.num, scontext.user.events[scontext.event.id].t)
+          assert.equal(scontext.whoami.event.id, scontext.event.id)
+          cb()
+        }
+      ], done);
     })
   })
 
