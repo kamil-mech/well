@@ -9,7 +9,10 @@ var assert = require('assert')
 var async = require('async')
 var util = require('util')
 
+var scontext = {};
+
 function sfunc(qent, func, q, field, cb){
+  if (_.isFunction(q)) q = q();
   qent[func](q, function(err, res){
     // err checking
     if (err) return seneca.fail(err)
@@ -20,7 +23,7 @@ function sfunc(qent, func, q, field, cb){
       })
     }
     // expose res as field
-    if (field) context[field] = res;
+    if (field) scontext[field] = res;
     cb(err, res, cb)
   })
 }
@@ -31,41 +34,41 @@ describe('happy', function() {
   it('happy main', function(done) {
     helper.init(done, function(seneca) {
 
-      var context = {}
+      scontext = {}
 
       async.series([
           sfunc.bind(null, helper.entities.event, 'load$', { code:'ma' }, 'event'), // load event A from db
           sfunc.bind(null, helper.entities.user, 'list$', {}, 'users'),             // load users from db
           function(cb) {                                                     // insert all users into event A, team Red
-            seneca.util.recurse(users.length, function( index, next ){
+            seneca.util.recurse(scontext.users.length, function( index, next ){
               seneca.act('role:well, cmd:joinevent', {
-                user: context.users[index],
-                event: context.event,
+                user: scontext.users[index],
+                event: scontext.event,
                 tnum:0
               }, next)
             }, cb)
           },
-          sfunc.bind(null, helper.entities.team, 'load$', { event: context.event.id, num: 0 }, 'team'), // load team Red from event A
+          sfunc.bind(null, helper.entities.team, 'load$', function() { return { event: scontext.event.id, num: 0 } }, 'team'), // load team Red from event A
           function(cb){
-            context.members = []
-              _.each(context.team.users, function(user) {
-                context.members.push(user)
+            scontext.members = []
+              _.each(scontext.team.users, function(user) {
+                scontext.members.push(user)
             })
             cb()
           },
-          sfunc.bind(null, helper.entities.user, 'load$', { name: context.members[0].name }, 'member_zero'), // Load member 0
-          sfunc.bind(null, helper.entities.user, 'load$', { name: context.members[1].name }, 'member_one'),  // Load member 1
-          sfunc.bind(null, seneca, 'act', { // Make the members exchange a card
-          role: well,
-          cmd: well,
-          user: context.member_zero,
-          event: context.event,
-          other: context.member_one.nick,
-          card: context.event.users[context.member_one.nick].c
-        }, 'wellres'),
+          sfunc.bind(null, helper.entities.user, 'load$', function() { return { name: scontext.members[0].name } }, 'member_zero'), // Load member 0
+          sfunc.bind(null, helper.entities.user, 'load$', function() { return { name: scontext.members[1].name } }, 'member_one'),  // Load member 1
+          sfunc.bind(null, seneca, 'act', function() { return { // Make the members exchange a card
+          role: 'well',
+          cmd: 'well',
+          user: scontext.member_zero,
+          event: scontext.event,
+          other: scontext.member_one.nick,
+          card: scontext.event.users[scontext.member_one.nick].c
+        } }, 'wellres'),
         function(cb){
           // Check if the points were added
-          assert.equal(context.wellres.team.numwells, 1)
+          assert.equal(scontext.wellres.team.numwells, 1)
           cb()
         }
       ], function(){
