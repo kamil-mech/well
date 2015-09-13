@@ -240,7 +240,6 @@ describe('data structure integrity', function() {
         function(cb){ seneca.act({ role: 'well', cmd: 'joinevent', user: scontext.admin, event: scontext.event, tnum: 0 }, after.bind(null, cb, 'joinres'))},
         // should return meta data object: {card:, user:, team:, event:}
         function(cb){
-          console.log('scontext.joinres', util.inspect(scontext.joinres))
           assert.equal((scontext.joinres.card >= 0 && scontext.joinres.card < scontext.event.numcards), true)
           assert.equal(scontext.joinres.user.nick, 'admin')
           assert.equal(scontext.joinres.team.name, 'Red')
@@ -259,95 +258,69 @@ describe('scenarios', function() {
   it('two teams play the game as intended', function(done) {
     helper.init(done, function(seneca){
       
-      // Load event A from db
-      ;seneca
-        .make$('event')
-        .load$({code:'ma'}, function(err, event){
-      // Load users from db
-      ;seneca
-        .make$('sys/user')
-        .list$(function(err, users){
 
-      // Insert users into event A
-      var team_r = []
-      var team_g = []
-      _.each(users, function(user) {
+      scontext = {}
+      async.series([
+        function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
+        function(cb){ helper.entities.user.list$({}, after.bind(null, cb, 'users'))},             // load users from db
+        // insert all users into event A
+        function(cb){
 
-        // Ensure at least 3 users in team Red
-        // All others go to team Green
-        var tnum = 0
-        if (users.indexOf(user) > 2) tnum = 1
-      ;seneca
-        .act('role:well, cmd:joinevent', {
-          user: user,
-          event: event,
-          tnum:tnum
-        }, function(err, res) {
-          // Populate temp arrays while populating the event
-          // since it's easenecaer and cleaner this way
-          if (user.events[event.id].t === 0) team_r.push(user)
-          else if (user.events[event.id].t === 1) team_g.push(user)
+          scontext.team_r = []
+          scontext.team_g = []
 
-          if (users.indexOf(user) < users.length - 1) return // <-- Loop control
+          async.map(scontext.users, function(user, mapcb){
+            // ensure at least 3 users in team Red
+            // all others go to team Green
+            var tnum = 0
+            if (scontext.users.indexOf(user) > 2) tnum = 1
 
-      // Exchange some cards
-      ;seneca
-        .act('role:well, cmd:well', {
-          user: team_r[0],
-          event: event,
-          other: team_r[1].nick,
-          card: event.users[team_r[1].nick].c
-        }, function(err, res){
-      ;seneca
-        .act('role:well, cmd:well', {
-          user: team_r[1],
-          event: event,
-          other: team_r[2].nick,
-          card: event.users[team_r[2].nick].c
-        }, function(err, res){
-      ;seneca
-        .act('role:well, cmd:well', {
-          user: team_r[2],
-          event: event,
-          other: team_r[0].nick,
-          card: event.users[team_r[0].nick].c
-        }, function(err, res){
-      ;seneca
-        .act('role:well, cmd:well', {
-          user: team_r[2],
-          event: event,
-          other: team_r[0].nick,
-          card: event.users[team_r[0].nick].c
-        }, function(err, res){
-          // Check if the points were added
-          assert.equal(res.team.numwells, 4)
-          
-      ;seneca
-        .act('role:well, cmd:well', {
-          user: team_g[0],
-          event: event,
-          other: team_g[1].nick,
-          card: event.users[team_g[1].nick].c
-        }, function(err, res){
-      ;seneca
-        .act('role:well, cmd:well', {
-          user: team_g[1],
-          event: event,
-          other: team_g[2].nick,
-          card: event.users[team_g[2].nick].c
-        }, function(err, res){
-      ;seneca
-        .act('role:well, cmd:well', {
-          user: team_g[2],
-          event: event,
-          other: team_g[0].nick,
-          card: event.users[team_g[0].nick].c
-        }, function(err, res){
-          // Check if the points were added
-          assert.equal(res.team.numwells, 3)
-
-          done()
-      }) }) }) }) }) }) }) }) }) }) })
+            seneca.act('role:well, cmd:joinevent', {
+              user: user,
+              event: scontext.event,
+              tnum: tnum
+            }, function(err, res) {
+              // populate temp arrays while populating the event
+              if (user.events[scontext.event.id].t === 0) scontext.team_r.push(user)
+              else if (user.events[scontext.event.id].t === 1) scontext.team_g.push(user)
+              return mapcb()
+            })
+          }, cb)
+        },
+        // exchange some red cards
+        function(cb){ seneca.act({ role: 'well', cmd: 'well',
+          user: scontext.team_r[0], event: scontext.event, other: scontext.team_r[1].nick,
+          card: scontext.event.users[scontext.team_r[1].nick].c }, after.bind(null, cb, null))},
+        function(cb){ seneca.act({ role: 'well', cmd: 'well',
+          user: scontext.team_r[1], event: scontext.event, other: scontext.team_r[2].nick,
+          card: scontext.event.users[scontext.team_r[2].nick].c }, after.bind(null, cb, null))},
+        function(cb){ seneca.act({ role: 'well', cmd: 'well',
+          user: scontext.team_r[2], event: scontext.event, other: scontext.team_r[0].nick,
+          card: scontext.event.users[scontext.team_r[0].nick].c }, after.bind(null, cb, null))},
+        function(cb){ seneca.act({ role: 'well', cmd: 'well',
+          user: scontext.team_r[2], event: scontext.event, other: scontext.team_r[0].nick,
+          card: scontext.event.users[scontext.team_r[0].nick].c }, after.bind(null, cb, 'redwells'))},
+        // check if the points were added
+        function(cb){
+          assert.equal(scontext.redwells.team.numwells, 4)
+          cb()
+        },
+        // exchange some green cards
+        function(cb){ seneca.act({ role: 'well', cmd: 'well',
+          user: scontext.team_g[0], event: scontext.event, other: scontext.team_g[1].nick,
+          card: scontext.event.users[scontext.team_g[1].nick].c }, after.bind(null, cb, null))},
+        function(cb){ seneca.act({ role: 'well', cmd: 'well',
+          user: scontext.team_g[1], event: scontext.event, other: scontext.team_g[2].nick,
+          card: scontext.event.users[scontext.team_g[2].nick].c }, after.bind(null, cb, null))},
+        function(cb){ seneca.act({ role: 'well', cmd: 'well',
+          user: scontext.team_g[2], event: scontext.event, other: scontext.team_g[0].nick,
+          card: scontext.event.users[scontext.team_g[0].nick].c }, after.bind(null, cb, 'greenwells'))},
+        // check if the points were added
+        function(cb){
+          assert.equal(scontext.greenwells.team.numwells, 3)
+          cb()
+        }
+      ], done);
     })
   })
 })
