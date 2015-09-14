@@ -41,8 +41,9 @@ module.exports =
       // setup db-specific args
       var db_args = {}
       if (db === 'jsonfile-store' || db === 'level-store') {
+        var id = 0;
         while (fs.existsSync(db_path)) {
-          id = (Math.random() * 1000).toString().substring(0, 3)
+          id++
           db_path = base_path + db + '-' + id
           db_args = {folder:db_path}
         }
