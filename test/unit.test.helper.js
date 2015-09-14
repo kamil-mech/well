@@ -8,7 +8,10 @@ module.exports =
     var port = process.env['npm_config_port']
     var _  = require('lodash')
     var fs = require('fs')
+    var util = require('util')
     var async = require('async')
+
+    var dbsc; // db shallow copy
     var self = this
 
     this.init_empty = function(errhandler, done) {
@@ -16,8 +19,6 @@ module.exports =
         errhandler: errhandler,
         default_plugins:{'mem-store':false}
       })
-
-      var util = require('util')
 
       // get options
       seneca.use('options', '../options.well.js')
@@ -72,93 +73,133 @@ module.exports =
     this.init = function(errhandler, done) {
       this.init_empty(errhandler, function(seneca){
 
-      self.entities = {
-        event: seneca.make$('event'),
-        team: seneca.make$('team'),
-        user: seneca.make$('sys/user')
-      }
-
-      var event_a = {}
-      var event_b = {}
-
-      // unfortunately seneca stores really don't like parallel
-      // add events
-      async.series([
-        function(cb) {
-          self.entities.event.save$({
-            numcards: 52,
-            numteams: 2,
-            name: 'MeetupA',
-            code: 'ma',
-            users: {}
-          }, function(err, res){
-            event_a = res
-            cb()
-          })
-        },
-        function(cb) {
-          self.entities.event.save$({
-            numcards: 52,
-            numteams: 1,
-            name: 'MeetupB',
-            code: 'mb',
-            users: {}
-          }, function(err, res){
-            event_b = res
-            cb()
-          })
-        },
-        // add teams
-        function(cb) {
-          self.entities.team.save$({
-            num: 0,
-            event: event_a.id,
-            eventcode: event_a.code,
-            name: 'Red',
-            wells: {},
-            numwells: 0,
-            users: {}
-          }, cb)
-        },
-        function(cb) {
-          self.entities.team.save$({
-            num: 1,
-            event: event_a.id,
-            eventcode: event_a.code,
-            name: 'Green',
-            wells: {},
-            numwells: 0,
-            users: {}
-          }, cb)
-        },
-        function(cb) {
-          self.entities.team.save$({
-            num: 0,
-            event: event_b.id,
-            eventcode: event_b.code,
-            name: 'Blue',
-            wells: {},
-            numwells: 0,
-            users: {}
-          }, cb)
+        self.entities = {
+          event: seneca.make$('event'),
+          team: seneca.make$('team'),
+          user: seneca.make$('sys/user')
         }
-      ], function(err, res){
-     
-     // add users
-      async.map([0, 1, 2, 3, 4, 5, 6], function(index, next){
-        seneca.act('role:user,cmd:register', {
-          nick: 'u' + index,
-          name: 'n' + index,
-          password: 'p' + index
-        }, next)
-      }, function(err, data){
 
-          done(seneca)
-      }) }) })
+        if (_.isEmpty(dbsc)) from_scratch()
+        else {
+          self.from_dbsc(seneca, function(){
+            done(seneca)
+          })
+        }
+
+        function from_scratch(){
+          var event_a = {}
+          var event_b = {}
+
+          // unfortunately seneca stores really don't like parallel
+          // add events
+          async.series([
+            function(cb) {
+              self.entities.event.save$({
+                numcards: 52,
+                numteams: 2,
+                name: 'MeetupA',
+                code: 'ma',
+                users: {}
+              }, function(err, res){
+                event_a = res
+                cb()
+              })
+            },
+            function(cb) {
+              self.entities.event.save$({
+                numcards: 52,
+                numteams: 1,
+                name: 'MeetupB',
+                code: 'mb',
+                users: {}
+              }, function(err, res){
+                event_b = res
+                cb()
+              })
+            },
+            // add teams
+            function(cb) {
+              self.entities.team.save$({
+                num: 0,
+                event: event_a.id,
+                eventcode: event_a.code,
+                name: 'Red',
+                wells: {},
+                numwells: 0,
+                users: {}
+              }, cb)
+            },
+            function(cb) {
+              self.entities.team.save$({
+                num: 1,
+                event: event_a.id,
+                eventcode: event_a.code,
+                name: 'Green',
+                wells: {},
+                numwells: 0,
+                users: {}
+              }, cb)
+            },
+            function(cb) {
+              self.entities.team.save$({
+                num: 0,
+                event: event_b.id,
+                eventcode: event_b.code,
+                name: 'Blue',
+                wells: {},
+                numwells: 0,
+                users: {}
+              }, cb)
+            }
+          ], function(err, res){
+         
+         // add users
+          async.map([0, 1, 2, 3, 4, 5, 6], function(index, next){
+            seneca.act('role:user,cmd:register', {
+              nick: 'u' + index,
+              name: 'n' + index,
+              password: 'p' + index
+            }, next)
+          }, function(err, data){
+
+              self.to_dbsc(seneca, function(){
+                done(seneca)
+          }) }) })
+        }
+      })
     }
 
-    this.to_dbsc = function(seneca){
+    this.to_dbsc = function(seneca, cb){
+      dbsc = {}
+      async.parallel([
+        sample.bind(null, 'event'),
+        sample.bind(null, 'team'),
+        sample.bind(null, 'sys/user')
+      ], cb)
 
+      function sample(entity, scb){
+        seneca.make$(entity).list$({}, function(err, res){
+          dbsc[entity] = _.clone(res)
+          scb()
+        })
+      }
+    }
+
+    this.from_dbsc = function(seneca, cb){
+      async.parallel([
+        load.bind(null, 'event'),
+        load.bind(null, 'team'),
+        load.bind(null, 'sys/user')
+      ], cb)
+
+      function load(entity, lcb){
+        var ent = seneca.make$(entity)
+        async.mapSeries(dbsc[entity], function(entry, next){
+          if(entry.users) entry.users = {}
+          if(entry.events) entry.events = {}
+          ent.save$(entry, next)
+        }, lcb)
+      }
     }
 
     // erases all entities from db
@@ -172,7 +213,7 @@ module.exports =
 
     // erase particular entity from db
     function erase(entity, seneca, cb){
-      seneca.act({role:'entity', cmd:'remove', qent:seneca.make(entity), q:{all$ : true}}, cb)
+      seneca.act({role:'entity', cmd:'remove', qent:seneca.make$(entity), q:{all$ : true}}, cb)
     }
 
   }

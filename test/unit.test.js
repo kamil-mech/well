@@ -82,7 +82,7 @@ describe('data structure integrity', function() {
     })
   })
 
-  // Currently does not check for the avatar
+  // currently does not check for the avatar
   it ('cmd:whoami logged in', function(done){
     helper.init(done, function(seneca){
 
