@@ -7,23 +7,24 @@ var _      = require('lodash')
 var assert = require('assert')
 var async = require('async')
 var util = require('util')
+var self = this;
+var seneca;
 
 // each series of operations has its own scope for convenience 
 var local = {}
 
 function after(cb, field, err, res){
   // err checking
-  if (err) return seneca.fail(err)
+  if (err) return self.seneca.fail(err)
   // expose res as field
   if (field) local[field] = res
   return cb(err, res)
 }
 
 describe('happy', function() {
-  this.timeout(15000)
-
   it('happy main', function(done) {
     helper.init(done, function(seneca) {
+      self.seneca = seneca;
 
       local = {}
       async.series([
@@ -68,10 +69,9 @@ describe('happy', function() {
 })
 
 describe('data structure integrity', function() {
-  this.timeout(15000)
-
   it('cmd:whoami logged out', function(done) {
     helper.init(done, function(seneca){
+      self.seneca = seneca;
 
       local = {}
       async.series([
@@ -85,6 +85,7 @@ describe('data structure integrity', function() {
   // currently does not check for the avatar
   it ('cmd:whoami logged in', function(done){
     helper.init(done, function(seneca){
+      self.seneca = seneca;
 
       local = {}
       async.series([
@@ -107,6 +108,7 @@ describe('data structure integrity', function() {
 
   it('cmd:leader', function(done){
     helper.init(done, function(seneca){
+      self.seneca = seneca;
 
       local = {}
       async.series([
@@ -134,10 +136,9 @@ describe('data structure integrity', function() {
     })
   })
 
-  it ('cmd:members', function(done){
-    this.timeout(15000)
-    
+  it ('cmd:members', function(done){    
     helper.init(done, function(seneca){
+      self.seneca = seneca;
 
       local = {}
       async.series([
@@ -187,6 +188,7 @@ describe('data structure integrity', function() {
 
   it ('cmd:member', function(done){
     helper.init(done, function(seneca){
+      self.seneca = seneca;
 
       local = {}
       async.series([
@@ -209,6 +211,7 @@ describe('data structure integrity', function() {
 
   it ('cmd:createevent', function(done){
     helper.init(done, function(seneca){
+      self.seneca = seneca;
 
       // Create the event
       seneca.act('role:well, cmd:createevent', {
@@ -230,6 +233,7 @@ describe('data structure integrity', function() {
 
   it('cmd:joinevent', function(done) {
     helper.init(done, function(seneca) {
+      self.seneca = seneca;
 
       local = {}
       async.series([
@@ -252,12 +256,10 @@ describe('data structure integrity', function() {
 })
 
 describe('scenarios', function() {
-  this.timeout(15000)
-
   it('two teams play the game as intended', function(done) {
     helper.init(done, function(seneca){
+      self.seneca = seneca;
       
-
       local = {}
       async.series([
         function(cb){ helper.entities.event.load$({ code:'ma' }, after.bind(null, cb, 'event'))}, // load event A from db
@@ -325,9 +327,9 @@ describe('scenarios', function() {
 })
 
 describe('clean-up', function() {
-  this.timeout(15000)
   it('clean db', function(done){
     helper.init_empty(done, function(seneca){
+      self.seneca = seneca;
       helper.clean_db(seneca, function(err){
         done()
       })
