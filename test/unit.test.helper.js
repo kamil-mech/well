@@ -166,15 +166,18 @@ module.exports =
     this.to_dbsc = function(seneca, cb){
       dbsc = {}
       async.parallel([
-        sample.bind(null, 'event'),
-        sample.bind(null, 'team'),
-        sample.bind(null, 'sys/user')
+        sample.bind(null, 'event', 2),
+        sample.bind(null, 'team', 2),
+        sample.bind(null, 'sys/user', 7)
       ], cb)
 
-      function sample(entity, scb){
+      function sample(entity, expected_size, scb){
         seneca.make$(entity).list$({}, function(err, res){
-          // console.log('entity: ' + entity) // VERY HANDY
-          // console.log(util.inspect(res))   // IN DEBUGGING
+          if (res.length < expected_size)
+            throw new Error('ENTITY INIT ERROR: ' + entity + '. HAS ' + res.length + ' ITEMS, EXPECTED '
+            + expected_size + '. CONTENTS: ' + util.inspect(res)) // sanity check
+
+          console.log('ENTITY ' + entity + ' OK')
           dbsc[entity] = _.clone(res)
           scb()
         })
@@ -190,6 +193,7 @@ module.exports =
 
       function load(entity, lcb){
         var ent = seneca.make$(entity)
+        if (!dbsc[entity]) throw new Error('ENTITY PRELOAD ERROR: ' + entity + '. PROBABLY CORRUPTED WHEN INIT')
         async.mapSeries(dbsc[entity], function(entry, next){
           if(entry.users) entry.users = {}
           if(entry.events) entry.events = {}
