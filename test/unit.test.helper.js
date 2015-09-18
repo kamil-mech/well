@@ -4,8 +4,6 @@ module.exports =
   function() {
 
     var db = process.env['npm_config_db']
-    var ip = process.env['npm_config_ip']
-    var port = process.env['npm_config_port']
     var _  = require('lodash')
     var fs = require('fs')
     var util = require('util')
@@ -52,12 +50,7 @@ module.exports =
       // ensure db subfolder
       if (!fs.existsSync(db_path)) fs.mkdirSync(db_path)
 
-
-      if (ip && ip !== '' && port && port !== '') {
-        db_args.host = ip
-        db_args.port = port
-      }
-      if (db_args.host && db_args.port) console.log('connecting at ' + db_args.host + ':' + db_args.port)
+      if (options[db] && options[db].host && options[db].port) console.log('connecting at ' + options[db].host + ':' + options[db].port)
         else console.log('db connection is internal')
       seneca.use(db, db_args)
 
@@ -180,6 +173,8 @@ module.exports =
 
       function sample(entity, scb){
         seneca.make$(entity).list$({}, function(err, res){
+          // console.log('entity: ' + entity) // VERY HANDY
+          // console.log(util.inspect(res))   // IN DEBUGGING
           dbsc[entity] = _.clone(res)
           scb()
         })
