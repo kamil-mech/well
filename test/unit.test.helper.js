@@ -167,13 +167,13 @@ module.exports =
       dbsc = {}
       async.parallel([
         sample.bind(null, 'event', 2),
-        sample.bind(null, 'team', 2),
-        sample.bind(null, 'sys/user', 7)
+        sample.bind(null, 'team', 3),
+        sample.bind(null, 'sys/user', 8)
       ], cb)
 
       function sample(entity, expected_size, scb){
         seneca.make$(entity).list$({}, function(err, res){
-          if (res.length < expected_size)
+          if (res.length !== expected_size)
             throw new Error('ENTITY INIT ERROR: ' + entity + '. HAS ' + res.length + ' ITEMS, EXPECTED '
             + expected_size + '. CONTENTS: ' + util.inspect(res)) // sanity check
 
