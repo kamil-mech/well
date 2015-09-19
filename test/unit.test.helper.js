@@ -195,9 +195,12 @@ module.exports =
         var ent = seneca.make$(entity)
         if (!dbsc[entity]) throw new Error('ENTITY PRELOAD ERROR: ' + entity + '. PROBABLY CORRUPTED WHEN INIT')
         async.mapSeries(dbsc[entity], function(entry, next){
-          if(entry.users) entry.users = {}
-          if(entry.events) entry.events = {}
-          ent.save$(entry, next)
+          // avoid duplicate admins
+          if (entry.nick !== 'admin'){
+            if(entry.users) entry.users = {}
+            if(entry.events) entry.events = {}
+            ent.save$(entry, next)
+          } else next()
         }, lcb)
       }
     }

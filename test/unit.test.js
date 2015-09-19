@@ -21,6 +21,14 @@ function after(cb, field, err, res){
   return cb(err, res)
 }
 
+describe('setup', function() {
+  it('init', function(done) {
+    helper.init(done, function(seneca) {
+      done()
+    })
+  })
+})
+
 describe('happy', function() {
   it('happy main', function(done) {
     helper.init(done, function(seneca) {
@@ -147,8 +155,7 @@ describe('data structure integrity', function() {
         // insert all users into event A
         function(cb){
           seneca.util.recurse(local.users.length, function( index, next ){
-            seneca
-            .act('role:well, cmd:joinevent', {
+            seneca.act('role:well, cmd:joinevent', {
               user: local.users[index],
               event: local.event,
             }, next)
