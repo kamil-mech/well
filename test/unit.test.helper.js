@@ -14,6 +14,7 @@ module.exports =
 
     this.init_empty = function(errhandler, done) {
       var seneca = require('seneca')({
+    strict: { result: false },
         errhandler: errhandler,
         default_plugins:{'mem-store':false}
       })
@@ -54,7 +55,7 @@ module.exports =
         else console.log('db connection is internal')
       seneca.use(db, db_args)
 
-      this.clean_db(seneca, function(err){
+      self.clean_db(seneca, function(err){
 
           // init well.js
           seneca.use('user')
@@ -157,7 +158,8 @@ module.exports =
           }, function(err, data){
 
               self.to_dbsc(seneca, function(){
-                done(seneca)
+
+              done(seneca)     
           }) }) })
         }
       })
@@ -197,8 +199,8 @@ module.exports =
         async.mapSeries(dbsc[entity], function(entry, next){
           // avoid duplicate admins
           if (entry.nick !== 'admin'){
-            if(entry.users) entry.users = {}
-            if(entry.events) entry.events = {}
+            if (entry.users) entry.users = {}
+            if (entry.events) entry.events = {}
             ent.save$(entry, next)
           } else next()
         }, lcb)
@@ -217,6 +219,24 @@ module.exports =
     // erase particular entity from db
     function erase(entity, seneca, cb){
       seneca.act({role:'entity', cmd:'remove', qent:seneca.make$(entity), q:{all$ : true}}, cb)
+    }
+
+    this.list_all = function(cb){
+      console.log('LOADING ALL ENTITIES')
+      self.entities.event.list$(function (err, ev){
+        self.entities.team.list$(function (err, te){
+          self.entities.user.list$(function (err, us){
+            var all = {
+              event: ev,
+              team: te,
+              user: us
+            }
+
+            console.log('ALL ENTITIES: ' + util.inspect(all))
+            cb()
+          })
+        })
+      })
     }
 
   }

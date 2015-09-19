@@ -48,7 +48,7 @@ module.exports = {
   'postgresql-store':{
     username:'admin',
     password:'password',
-    host:process.env.POSTGRES_LINK_PORT_5432_TCP_ADDR || 'localhost',
+    host:process.env.POSTGRES_LINK_PORT_5432_TCP_ADDR || process.env.POSTGRESQL_LINK_PORT_5432_TCP_ADDR || 'localhost',
     port:process.env.POSTGRES_LINK_PORT_5432_TCP_PORT || 5432,
     name:'admin', // Because of the way docker image works it has to be same as username
     schema:'/test/dbs/postgres.sql'
