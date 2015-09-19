@@ -88,7 +88,7 @@ module.exports =
           // add events
           async.series([
             function(cb) {
-              self.entities.event.save$({
+              seneca.make$('event').save$({ // cannot use self.entities.event as save$ is special
                 numcards: 52,
                 numteams: 2,
                 name: 'MeetupA',
@@ -100,7 +100,7 @@ module.exports =
               })
             },
             function(cb) {
-              self.entities.event.save$({
+              seneca.make$('event').save$({
                 numcards: 52,
                 numteams: 1,
                 name: 'MeetupB',
@@ -113,7 +113,7 @@ module.exports =
             },
             // add teams
             function(cb) {
-              self.entities.team.save$({
+              seneca.make$('team').save$({
                 num: 0,
                 event: event_a.id,
                 eventcode: event_a.code,
@@ -124,7 +124,7 @@ module.exports =
               }, cb)
             },
             function(cb) {
-              self.entities.team.save$({
+              seneca.make$('team').save$({
                 num: 1,
                 event: event_a.id,
                 eventcode: event_a.code,
@@ -135,7 +135,7 @@ module.exports =
               }, cb)
             },
             function(cb) {
-              self.entities.team.save$({
+              seneca.make$('team').save$({
                 num: 0,
                 event: event_b.id,
                 eventcode: event_b.code,
