@@ -22,8 +22,9 @@ function after(cb, field, err, res){
 }
 
 describe('setup', function() {
+  this.timeout(3000)
   it('init', function(done) {
-    helper.init(done, function(seneca) {
+    helper.init(done, true, function(seneca) {
       done()
     })
   })
@@ -31,7 +32,7 @@ describe('setup', function() {
 
 describe('happy', function() {
   it('happy main', function(done) {
-    helper.init(done, function(seneca) {
+    helper.init(done, false, function(seneca) {
       self.seneca = seneca;
 
       local = {}
@@ -78,7 +79,7 @@ describe('happy', function() {
 
 describe('data structure integrity', function() {
   it('cmd:whoami logged out', function(done) {
-    helper.init(done, function(seneca){
+    helper.init(done, false, function(seneca){
       self.seneca = seneca;
 
       local = {}
@@ -92,7 +93,7 @@ describe('data structure integrity', function() {
 
   // currently does not check for the avatar
   it ('cmd:whoami logged in', function(done){
-    helper.init(done, function(seneca){
+    helper.init(done, false, function(seneca){
       self.seneca = seneca;
 
       local = {}
@@ -115,7 +116,7 @@ describe('data structure integrity', function() {
   })
 
   it('cmd:leader', function(done){
-    helper.init(done, function(seneca){
+    helper.init(done, false, function(seneca){
       self.seneca = seneca;
 
       local = {}
@@ -144,8 +145,9 @@ describe('data structure integrity', function() {
     })
   })
 
-  it ('cmd:members', function(done){    
-    helper.init(done, function(seneca){
+  it ('cmd:members', function(done){
+    this.timeout(3500)
+    helper.init(done, false, function(seneca){
       self.seneca = seneca;
 
       local = {}
@@ -194,7 +196,7 @@ describe('data structure integrity', function() {
   })
 
   it ('cmd:member', function(done){
-    helper.init(done, function(seneca){
+    helper.init(done, false, function(seneca){
       self.seneca = seneca;
 
       local = {}
@@ -217,7 +219,7 @@ describe('data structure integrity', function() {
   })
 
   it ('cmd:createevent', function(done){
-    helper.init(done, function(seneca){
+    helper.init(done, false, function(seneca){
       self.seneca = seneca;
 
       // Create the event
@@ -239,7 +241,7 @@ describe('data structure integrity', function() {
   })
 
   it('cmd:joinevent', function(done) {
-    helper.init(done, function(seneca) {
+    helper.init(done, false, function(seneca) {
       self.seneca = seneca;
 
       local = {}
@@ -264,7 +266,7 @@ describe('data structure integrity', function() {
 
 describe('scenarios', function() {
   it('two teams play the game as intended', function(done) {
-    helper.init(done, function(seneca){
+    helper.init(done, false, function(seneca){
       self.seneca = seneca;
       
       local = {}
@@ -335,11 +337,8 @@ describe('scenarios', function() {
 
 describe('clean-up', function() {
   it('clean db', function(done){
-    helper.init_empty(done, function(seneca){
-      self.seneca = seneca;
-      helper.clean_db(seneca, function(err){
-        done()
-      })
+    helper.clean_db(function(err){
+      done()
     })
   })
 })

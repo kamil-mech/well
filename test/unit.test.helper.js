@@ -8,16 +8,19 @@ module.exports =
     var fs = require('fs')
     var util = require('util')
     var async = require('async')
+    
+    var seneca
+    var blank = true
 
-    var dbsc; // db shallow copy
     var self = this
 
-    this.init_empty = function(errhandler, done) {
-      var seneca = require('seneca')({
-    strict: { result: false },
+    this.init_empty = function(errhandler, nuke, done) {
+        var si = require('seneca')({
+        strict: { result: false },
         errhandler: errhandler,
         default_plugins:{'mem-store':false}
       })
+      seneca = si
 
       // get options
       seneca.use('options', '../options.well.js')
@@ -55,18 +58,28 @@ module.exports =
         else console.log('db connection is internal')
       seneca.use(db, db_args)
 
-      self.clean_db(seneca, function(err){
+      self.clean_db(function(err){
+        
+        // init well.js
+        seneca.use('user')
+        seneca.use('../well', options)
 
-          // init well.js
-          seneca.use('user')
-          seneca.use('../well', options)
-
-          done(seneca)
+        seneca.ready(function(){
+          done()
+        })
       })
     }
 
-    this.init = function(errhandler, done) {
-      this.init_empty(errhandler, function(seneca){
+    this.init = function(errhandler, nuke, done) {
+      if (nuke) {
+        this.init_empty(errhandler, nuke, function(){
+          fin()
+        })
+      } else {
+        fin()
+      }
+
+      function fin(){
 
         self.entities = {
           event: seneca.make$('event'),
@@ -74,14 +87,16 @@ module.exports =
           user: seneca.make$('sys/user')
         }
 
-        if (_.isEmpty(dbsc)) from_scratch()
+        if (blank) from_scratch()
         else {
-          self.from_dbsc(seneca, function(){
+          self.raw_data(function(){
             done(seneca)
           })
         }
 
         function from_scratch(){
+          blank = false
+
           var event_a = {}
           var event_b = {}
 
@@ -157,68 +172,45 @@ module.exports =
             }, next)
           }, function(err, data){
 
-              self.to_dbsc(seneca, function(){
-
-              done(seneca)     
-          }) }) })
+              done()     
+          }) })
         }
-      })
+      }
     }
 
-    this.to_dbsc = function(seneca, cb){
-      dbsc = {}
+    this.raw_data = function(cb){
       async.parallel([
-        sample.bind(null, 'event', 2),
-        sample.bind(null, 'team', 3),
-        sample.bind(null, 'sys/user', 8)
+        raw.bind(null, 'event'),
+        raw.bind(null, 'team'),
+        raw.bind(null, 'sys/user')
       ], cb)
 
-      function sample(entity, expected_size, scb){
-        seneca.make$(entity).list$({}, function(err, res){
-          if (res.length !== expected_size)
-            throw new Error('ENTITY INIT ERROR: ' + entity + '. HAS ' + res.length + ' ITEMS, EXPECTED '
-            + expected_size + '. CONTENTS: ' + util.inspect(res)) // sanity check
-
-          console.log('ENTITY ' + entity + ' OK')
-          dbsc[entity] = _.clone(res)
-          scb()
+      function raw(entity, lcb){
+        var ent = seneca.make$(entity)
+        ent.list$(function(err, res){
+          async.mapSeries(res, function(entry, next){
+            if (entry.users) entry.users = {}
+            if (entry.events) entry.events = {}
+            if (entry.numwells) entry.numwells = 0
+            ent.save$(entry, next)
+          }, lcb)
         })
       }
     }
 
-    this.from_dbsc = function(seneca, cb){
-      async.parallel([
-        load.bind(null, 'event'),
-        load.bind(null, 'team'),
-        load.bind(null, 'sys/user')
-      ], cb)
-
-      function load(entity, lcb){
-        var ent = seneca.make$(entity)
-        if (!dbsc[entity]) throw new Error('ENTITY PRELOAD ERROR: ' + entity + '. PROBABLY CORRUPTED WHEN INIT')
-        async.mapSeries(dbsc[entity], function(entry, next){
-          // avoid duplicate admins
-          if (entry.nick !== 'admin'){
-            if (entry.users) entry.users = {}
-            if (entry.events) entry.events = {}
-            ent.save$(entry, next)
-          } else next()
-        }, lcb)
-      }
-    }
-
     // erases all entities from db
-    this.clean_db = function(seneca, cb){
+    this.clean_db = function(cb){
+      console.log('ERASING ALL')
       async.parallel([
-        erase.bind(null, 'sys/user', seneca),
-        erase.bind(null, 'team', seneca),
-        erase.bind(null, 'event', seneca),
+        erase.bind(null, 'sys/user'),
+        erase.bind(null, 'team'),
+        erase.bind(null, 'event'),
       ], cb)
     }
 
     // erase particular entity from db
-    function erase(entity, seneca, cb){
-      seneca.act({role:'entity', cmd:'remove', qent:seneca.make$(entity), q:{all$ : true}}, cb)
+    function erase(entity, cb){
+      seneca.act({ role:'entity', cmd:'remove', qent: seneca.make$(entity), q: { all$ : true } }, cb)
     }
 
     this.list_all = function(cb){
