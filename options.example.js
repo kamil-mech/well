@@ -39,8 +39,8 @@ module.exports = {
     // uncomment if using mongo authentication
     //user:'USERMAME',
     //pass:'PASSWORD',
-    host:process.env.MONGO_LINK_PORT_27017_TCP_ADDR || 'localhost',
-    port:process.env.MONGO_LINK_PORT_27017_TCP_PORT || 27017,
+    host:process.env.MONGO_PORT_27017_TCP_ADDR || 'localhost',
+    port:process.env.MONGO_PORT_27017_TCP_PORT || 27017,
     name:'well'
   },
 
@@ -48,22 +48,22 @@ module.exports = {
   'postgresql-store':{
     username:'admin',
     password:'password',
-    host:process.env.POSTGRES_LINK_PORT_5432_TCP_ADDR || process.env.POSTGRESQL_LINK_PORT_5432_TCP_ADDR || 'localhost',
-    port:process.env.POSTGRES_LINK_PORT_5432_TCP_PORT || 5432,
+    host:process.env.POSTGRES_PORT_5432_TCP_ADDR || process.env.POSTGRESQL_PORT_5432_TCP_ADDR || 'localhost',
+    port:process.env.POSTGRES_PORT_5432_TCP_PORT || 5432,
     name:'admin', // Because of the way docker image works it has to be same as username
     schema:'/test/dbs/postgres.sql'
   },
 
   // options for seneca-redis-store
   'redis-store':{
-    host:process.env.REDIS_LINK_PORT_6379_TCP_ADDR || 'localhost',
-    port:process.env.REDIS_LINK_PORT_6379_TCP_PORT || 6379
+    host:process.env.REDIS_PORT_6379_TCP_ADDR || 'localhost',
+    port:process.env.REDIS_PORT_6379_TCP_PORT || 6379
   },
 
   // options for seneca-mysql-store
   'mysql-store':{
-    host:process.env.MYSQL_LINK_PORT_3306_TCP_ADDR || 'localhost',
-    port:process.env.MYSQL_LINK_PORT_3306_TCP_PORT || 3306,
+    host:process.env.MYSQL_PORT_3306_TCP_ADDR || 'localhost',
+    port:process.env.MYSQL_PORT_3306_TCP_PORT || 3306,
     user:'root', // to keep things simple this has to be root
     password:'password',
     name:'admin',
@@ -72,43 +72,39 @@ module.exports = {
 
   'cassandra-store':{
     name: 'well',
-    host: process.env.CASSANDRA_LINK_PORT_9160_TCP_ADDR || 'localhost',
-    port: process.env.CASSANDRA_LINK_PORT_9160_TCP_PORT || 9160
+    host: process.env.CASSANDRA_PORT_9160_TCP_ADDR || 'localhost',
+    port: process.env.CASSANDRA_PORT_9160_TCP_PORT || 9160
   },
 
   'couchdb-store':{
-    host: process.env.COUCHDB_LINK_PORT_12000_TCP_ADDR || 'localhost',
-    port: process.env.COUCHDB_LINK_PORT_12000_TCP_PORT || 12000
+    host: process.env.COUCHDB_PORT_12000_TCP_ADDR || 'localhost',
+    port: process.env.COUCHDB_PORT_12000_TCP_PORT || 12000
   },
 
   'orient-store':{
     name: 'well',
-    host: process.env.ORIENT_LINK_PORT_2424_TCP_ADDR || 'localhost',
-    port: process.env.ORIENT_LINK_PORT_2424_TCP_PORT || 2424,
+    host: process.env.ORIENT_PORT_2424_TCP_ADDR || 'localhost',
+    port: process.env.ORIENT_PORT_2424_TCP_PORT || 2424,
     username: 'root',
     password: '',
     options: {}
   },
 
   'rethink-store':{
-    host: process.env.RETHINKDB_LINK_PORT_28015_TCP_ADDR || 'localhost',
-    port: process.env.RETHINKDB_LINK_PORT_28015_TCP_PORT || 28015,
+    host: process.env.RETHINKDB_PORT_28015_TCP_ADDR || 'localhost',
+    port: process.env.RETHINKDB_PORT_28015_TCP_PORT || 28015,
     authKey: "",
     db: "well"
   },
 
   // options for db test
   'dbt':{
-      workdir:__dirname,
       // docker images to run.
       // use -d to run without additional terminal.
       // --link and -e db= will be added automatically.
-      // if it exposes a port with -p, tester will automatically
+      // if it exposes a port in dockerfile, tester will automatically
       // wait for it to start listening before booting next.
-      dockimages:['--rm well-app'],
-      // dockerfiles to be rebuilt when -fb is used
-      // syntax: [image-tag] [path_to_dockerfile]
-      dockbuilds:['well-app .'],
+      dockimages:['well-app'],
       // extra files to be erased on cleanup
       // uses prevention mechanisms to avoid self-destruction
       cleanups:['test/unit-db']
