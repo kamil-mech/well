@@ -104,10 +104,7 @@ module.exports = {
       // --link and -e db= will be added automatically.
       // if it exposes a port in dockerfile, tester will automatically
       // wait for it to start listening before booting next.
-      dockimages:['well-app'],
-      // extra files to be erased on cleanup
-      // uses prevention mechanisms to avoid self-destruction
-      cleanups:['test/unit-db']
+      dockimages:['well-app']
   },
 
   // options for memcached

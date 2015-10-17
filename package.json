@@ -57,6 +57,7 @@
   "devDependencies": {
     "seneca-store-listen":"0.1.2",
     "mocha": "2.1.0",
-    "hippie": "0.3.0"
+    "hippie": "0.3.0",
+    "rimraf": "2.4.3"
   }
 }

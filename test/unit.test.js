@@ -5,9 +5,10 @@ var Helper = require('./unit.test.helper.js')
 var helper = new Helper()
 var _      = require('lodash')
 var assert = require('assert')
-var async = require('async')
-var util = require('util')
-var self = this;
+var async  = require('async')
+var util   = require('util')
+var rimraf = require('rimraf')
+var self   = this;
 var seneca;
 
 // each series of operations has its own scope for convenience 
@@ -338,7 +339,9 @@ describe('scenarios', function() {
 describe('clean-up', function() {
   it('clean db', function(done){
     helper.clean_db(function(err){
-      done()
+      rimraf(__dirname + '/unit-db/', function() {
+          done()
+      })
     })
   })
 })
