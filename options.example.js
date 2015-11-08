@@ -48,10 +48,10 @@ module.exports = {
   'postgresql-store':{
     username:'admin',
     password:'password',
-    host:process.env.POSTGRES_PORT_5432_TCP_ADDR || process.env.POSTGRESQL_PORT_5432_TCP_ADDR || 'localhost',
-    port:process.env.POSTGRES_PORT_5432_TCP_PORT || 5432,
-    name:'admin', // Because of the way docker image works it has to be same as username
-    schema:'/test/dbs/postgres.sql'
+    host:process.env.POSTGRESQL_PORT_5432_TCP_ADDR || process.env.POSTGRES_PORT_5432_TCP_ADDR || 'localhost',
+    port:process.env.POSTGRESQL_PORT_5432_TCP_PORT || 5432,
+    name:'admin', // because of the way docker image works it has to be same as username
+    schema: __dirname + '/test/dbs/mysql.sql' // used by seneca-db-test-harness
   },
 
   // options for seneca-redis-store
@@ -67,7 +67,7 @@ module.exports = {
     user:'root', // to keep things simple this has to be root
     password:'password',
     name:'admin',
-    schema:'/test/dbs/mysql.sql'
+    schema: __dirname + '/test/dbs/mysql.sql' // used by seneca-db-test-harness
   },
 
   'cassandra-store':{

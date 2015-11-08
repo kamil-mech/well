@@ -26,6 +26,7 @@ describe('setup', function() {
   this.timeout(3000)
   it('init', function(done) {
     helper.init(done, true, function(seneca) {
+      assert.ok(seneca, 'init not ok');
       done()
     })
   })

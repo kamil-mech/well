@@ -172,7 +172,7 @@ module.exports =
             }, next)
           }, function(err, data){
 
-              done()     
+              done(seneca)     
           }) })
         }
       }
