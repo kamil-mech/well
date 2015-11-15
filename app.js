@@ -47,12 +47,12 @@ var seneca  = require('seneca')({default_plugins:{'mem-store':false}})
 // each seneca plugin can be given options when you register it ("seneca.use"),
 // so you don't have to do this, but it does make life easier
 // see the options.well.js file for more
+var db = argv.db ? argv.db : process.env.db
 load_options(seneca)
 
 // db is set in run arguments (e.g. node app.js --env=development --db=mongo-store)
 // for more seneca db stores visit
 // https://github.com/search?q=seneca+store
-var db = argv.db ? argv.db : process.env.db
 if (db === 'postgres-store') db = 'postgresql-store'
 // argv determines locally and process.env determines in docker
 // example docker run:
@@ -125,92 +125,95 @@ function erase(entity, callback){
 
 function ready(){
 
-// allow to erase DB if --clear=true:
-var clear = argv.clear ? argv.clear : process.env.clear
+  // allow to erase DB if --clear=true:
+  var clear = argv.clear ? argv.clear : process.env.clear
 
-if (clear === 'true')
-erase('sys/user', function() {
-  erase('team', function() {
-    erase('event', function() {
-      console.log('db is clean now')
-      argv.clear = false
-      process.env.clear = false
-      ready()
+  if (clear === 'true')
+  erase('sys/user', function() {
+    erase('team', function() {
+      erase('event', function() {
+        console.log('db is clean now')
+        argv.clear = false
+        process.env.clear = false
+        ready()
+      })
     })
   })
-})
-else {
+  else {
 
-  // register the seneca-user plugin - this provides user account business logic
-  seneca.use('user')
+    seneca.ready(function(){
 
-  // register the seneca-auth plugin - this provides authentication business logic
-  seneca.use('auth')
+      // register the seneca-user plugin - this provides user account business logic
+      seneca.use('user')
 
-  // register the seneca-perm plugin - this provides permission checking
-  // set the entity option to true, which means, "check all entities"
-  seneca.use('perm',{entity:true})
+      // register the seneca-auth plugin - this provides authentication business logic
+      seneca.use('auth')
 
-  seneca.use('well',{fake:'development'==env})
-  console.log('db is rebuilt now')
+      // register the seneca-perm plugin - this provides permission checking
+      // set the entity option to true, which means, "check all entities"
+      seneca.use('perm',{entity:true})
 
-  require('dns').lookup(require('os').hostname(), function (err, addr, fam) {
-    console.log('server address: ' + addr + ':' + (process.env['PORT'] || 3333) + '\n');
-  })
+      seneca.use('well',{fake:'development'==env})
+      console.log('db is rebuilt now')
 
-  // register the seneca-data-editor plugin - this provides a user interface for data admin
-  // Open the /data-editor url path to edit data! (you must be an admin, or on localhost)
-  seneca.use('data-editor')
-  // register your own plugin - the well app business logic!
-  // in the options, indicate if you're in development mode
-  // set the fake option, which triggers creation of test users and events if env == 'development'
-  seneca.use('well',{fake:'development'==env})
+      require('dns').lookup(require('os').hostname(), function (err, addr, fam) {
+        console.log('server address: ' + addr + ':' + (process.env['PORT'] || 3333) + '\n');
+      })
 
-  // seneca plugins can export objects for external use
-  // you can access these using the seneca.export method
+      // register the seneca-data-editor plugin - this provides a user interface for data admin
+      // Open the /data-editor url path to edit data! (you must be an admin, or on localhost)
+      seneca.use('data-editor')
+      // register your own plugin - the well app business logic!
+      // in the options, indicate if you're in development mode
+      // set the fake option, which triggers creation of test users and events if env == 'development'
+      seneca.use('well',{fake:'development'==env})
 
-  // get the configuration options
-  var options = seneca.export('options')
+      // seneca plugins can export objects for external use
+      // you can access these using the seneca.export method
 
-  // get the middleware function from the builtin web plugin
-  var web = seneca.export('web')
+      // get the configuration options
+      var options = seneca.export('options')
 
-  // get the simple database-backed session store defined in well.js
-  var sessionstore = seneca.export('well/session-store')
+      // get the middleware function from the builtin web plugin
+      var web = seneca.export('web')
 
-  // load the express module
-  // this provides the basic web server
-  var express = require('express')
-  var session = require('express-session')
+      // get the simple database-backed session store defined in well.js
+      var sessionstore = seneca.export('well/session-store')
 
-  // create an express app
-  var app = express()
+      // load the express module
+      // this provides the basic web server
+      var express = require('express')
+      var session = require('express-session')
 
-  // Log requests to console
-  app.use( function(req,res,next){
-    console.log('EXPRESS',new Date().toISOString(), req.method, req.url)
-    next()
-  })
+      // create an express app
+      var app = express()
 
-  // setup express
-  //app.use( require('cookie-parser') )
-  app.use( require('body-parser').json() )
+      // Log requests to console
+      app.use( function(req,res,next){
+        console.log('EXPRESS',new Date().toISOString(), req.method, req.url)
+        next()
+      })
 
-  // you can't use a single node in-memory session store if you want to scale
-  // well.js defines a session store that uses seneca entities
-  app.use( session({ secret: 'CHANGE-THIS', store: sessionstore(session) }) )
+      // setup express
+      //app.use( require('cookie-parser') )
+      app.use( require('body-parser').json() )
 
-  // add in the seneca middleware
-  // this is how seneca integrates with express (or any connect-style web server module)
-  app.use( web )
+      // you can't use a single node in-memory session store if you want to scale
+      // well.js defines a session store that uses seneca entities
+      app.use( session({ secret: 'CHANGE-THIS', store: sessionstore(session) }) )
 
-  // serve static files from a folder defined in your options file
-  app.use( express.static(__dirname+options.main.public) )
+      // add in the seneca middleware
+      // this is how seneca integrates with express (or any connect-style web server module)
+      app.use( web )
 
-  // start listening for HTTP requests
-  app.listen( options.main.port )
+      // serve static files from a folder defined in your options file
+      app.use( express.static(__dirname+options.main.public) )
 
-  seneca.log.info('listen',options.main.port)
+      // start listening for HTTP requests
+      app.listen( options.main.port )
+
+      seneca.log.info('listen',options.main.port)
+    })
 
   }
 }
