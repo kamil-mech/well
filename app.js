@@ -79,7 +79,7 @@ if (custom_dbs.indexOf(db) === -1) {
   console.log('\nusing ' + db + ' db')
   seneca.use(db, db_args)
 
-  ready()
+  seneca.ready(ready);
 }
 else
 {

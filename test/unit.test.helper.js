@@ -57,15 +57,17 @@ module.exports =
       if (options[db] && options[db].host && options[db].port) console.log('connecting at ' + options[db].host + ':' + options[db].port)
         else console.log('db connection is internal')
       seneca.use(db, db_args)
+      seneca.ready(function(){
 
-      self.clean_db(function(err){
-        
-        // init well.js
-        seneca.use('user')
-        seneca.use('../well', options)
+        self.clean_db(function(err){
+          
+          // init well.js
+          seneca.use('user')
+          seneca.use('../well', options)
 
-        seneca.ready(function(){
-          done()
+          seneca.ready(function(){
+            done()
+          })
         })
       })
     }
