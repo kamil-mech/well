@@ -58,36 +58,21 @@ load_options(seneca)
 // db is set in run arguments (e.g. node app.js --env=development --db=mongo-store)
 // for more seneca db stores visit
 // https://github.com/search?q=seneca+store
-if (db === 'postgres-store') db = 'postgresql-store'
 // argv determines locally and process.env determines in docker
 // example docker run:
 // docker run -v /home/deploy/test:/test -p 3333:3333 --rm -e db=mem-store well-app
 
 // for dbs using seneca-transport
-var custom_dbs = ['mem-store', 'jsonfile-store']
+var networkless_dbs = ['mem-store', 'jsonfile-store']
+if (!db) db = 'mem-store'
 
-// if db is unspecified or default
-if (custom_dbs.indexOf(db) === -1) {
-  if (!db) db = 'mem-store'
-  var db_args
-  // mem-store is recommended as development db
-  // the built in mem-store plugin provides a throw-away in-process database
-  // also enables http://localhost:3333/mem-store/dump so you can debug db contents
-  if (db === 'mem-store') db_args = {web:{dump:true}}
-
-  // mongo-store is recommended as production db
-  // NOTE: no code changes are required! just feed '--db=mongo-store' into the app
-  // this is one of the benefits of using the seneca data entity model
-  // for more, see http://senecajs.org/data-entities.html
-
+console.log('\nusing ' + db + ' db')
+if (networkless_dbs.indexOf(db) === -1) {
   // init plugin for chosen dbs
-  console.log('\nusing ' + db + ' db')
-  seneca.use(db, db_args)
-
+  seneca.use(db)
   seneca.ready(ready);
-}
-else
-{
+
+} else {
   var sl = require('seneca-store-listen')()
 
   sl.host(db, function(server_config){
