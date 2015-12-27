@@ -70,33 +70,6 @@ module.exports = {
     schema: __dirname + '/test/dbs/mysql.sql' // used by seneca-db-test-harness
   },
 
-  'cassandra-store':{
-    name: 'well',
-    host: process.env.CASSANDRA_PORT_9160_TCP_ADDR || 'localhost',
-    port: process.env.CASSANDRA_PORT_9160_TCP_PORT || 9160
-  },
-
-  'couchdb-store':{
-    host: process.env.COUCHDB_PORT_12000_TCP_ADDR || 'localhost',
-    port: process.env.COUCHDB_PORT_12000_TCP_PORT || 12000
-  },
-
-  'orient-store':{
-    name: 'well',
-    host: process.env.ORIENT_PORT_2424_TCP_ADDR || 'localhost',
-    port: process.env.ORIENT_PORT_2424_TCP_PORT || 2424,
-    username: 'root',
-    password: '',
-    options: {}
-  },
-
-  'rethink-store':{
-    host: process.env.RETHINKDB_PORT_28015_TCP_ADDR || 'localhost',
-    port: process.env.RETHINKDB_PORT_28015_TCP_PORT || 28015,
-    authKey: "",
-    db: "well"
-  },
-
   // options for db test
   'dbt':{
       // docker images to run.
