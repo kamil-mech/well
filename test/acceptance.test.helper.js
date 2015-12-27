@@ -1,5 +1,5 @@
 module.exports =
-  function(callback) {
+  function(done) {
 
     var Hippie = require('hippie')
     var _      = require('lodash')
@@ -24,7 +24,7 @@ module.exports =
         if (!base) base = 'http://localhost:3333'
           else base = 'http://' + base + ':3333'
         console.log('connecting to: ' + base)
-        callback()
+        done()
       })
     })
 
@@ -38,7 +38,7 @@ module.exports =
     //    login_key: (optional)
     //    force:     true if want to force login
     //    post:      true if want to POST
-    this.auth_get = function auth_get(args, callback){
+    this.auth_get = function auth_get(args, done){
       if (!args.login) args.login = 'admin'
       if (!args.password) args.password = 'admin'
 
@@ -76,18 +76,18 @@ module.exports =
         if (args.type === 'json') hippie.expectHeader('Content-Type', 'application/json')
         if (args.type === 'html') hippie.expectHeader('Content-Type', 'text/html; charset=utf-8')
 
-        if (err) callback(err, hippie, session, login_key)
+        if (err) done(err, hippie, session, login_key)
 
         hippie
           .end(function(err, res){
-              callback(err, res, session, login_key)
+              done(err, res, session, login_key)
           })
       }
 
     }
 
     // Get login info
-    this.login = function login(login, password, callback){
+    this.login = function login(login, password, done){
 
       // Login
       var hippie = new Hippie()
@@ -99,7 +99,7 @@ module.exports =
         .get(url)
         .expectStatus(301)
         .end(function(err, res) {
-          if (err) callback(err)
+          if (err) done(err)
           if (res.headers.location === '#fail') console.log(res.body)
           if (res.headers.location === '#fail') err = new Error('Invalid login credentials')
 
@@ -113,7 +113,7 @@ module.exports =
           })
           // Return cookies and set up creds
           if (login_key) creds[login] = {session:session, login_key:login_key}
-          callback(err, session, login_key)
+          done(err, session, login_key)
 
       })
     }
@@ -124,19 +124,19 @@ module.exports =
     //    event:     event code
     //    login:     user login
     //    password:  user password
-    this.join = function join(args, callback){
-      if (!args.event) callback(new Error('No event specified'))
+    this.join = function join(args, done){
+      if (!args.event) done(new Error('No event specified'))
       if (!args.login) args.login = 'admin'
       var event = joined[args.event]
 
       // If joined already - return
-      if (event && event.members.indexOf(args.login) > -1) return callback()
+      if (event && event.members.indexOf(args.login) > -1) return done()
 
       args.url = '/well/' + args.event + '/whoami'
       args.status = 200
       args.type = 'json'
       this.auth_get(args, function(err, res){
-        if (err) return callback(err)
+        if (err) return done(err)
         else {
           // Create event members if undefined and push login into it
           if (!event) joined[args.event] = {members:[]}
@@ -148,7 +148,7 @@ module.exports =
             }
         }
 
-      callback()
+      done()
       })
     }
 }
