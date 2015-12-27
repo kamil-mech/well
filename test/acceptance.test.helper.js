@@ -20,8 +20,9 @@ module.exports =
 
       exec("docker inspect --format '{{ .NetworkSettings.IPAddress }}' " + docker_hex,
       function (error, stdout, stderr) {
-        base = 'http://' + stdout.toString('utf-8').trim() + ':3333'
+        base = stdout.toString('utf-8').trim()
         if (!base) base = 'http://localhost:3333'
+          else base = 'http://' + base + ':3333'
         console.log('connecting to: ' + base)
         callback()
       })
