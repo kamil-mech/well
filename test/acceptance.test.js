@@ -10,6 +10,10 @@ var async = require('async')
 var Helper = require('./acceptance.test.helper.js')
 var helper
 
+process.on('SIGINT', function(err) {
+  process.exit(0)
+})
+
 // Links covered:
 
 // '/auth/instance'                         GET
