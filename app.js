@@ -29,6 +29,11 @@ process.on('uncaughtException', function(err) {
   process.exit(1)
 })
 
+process.on('SIGINT', function(err) {
+  process.exit(0)
+})
+
+
 // the easiest way to parse command line arguments
 // see https://github.com/substack/node-optimist
 var argv = require('optimist').argv
