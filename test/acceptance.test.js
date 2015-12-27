@@ -6,6 +6,7 @@ var assert = require('assert')
 var util   = require('util')
 var Hippie = require('hippie')
 var _      = require('lodash')
+var async = require('async')
 var Helper = require('./acceptance.test.helper.js')
 var helper
 
@@ -53,55 +54,52 @@ describe('acceptance testing', function(){
   })
 
   it('well/:event/player/members/:team', function(done) {
-    this.timeout(15000)
-    // Get all users
-    ;helper.auth_get({url:'/data-editor/rest/sys%2Fuser', status:200, type:'json'}, function(err, res) {
-      if (err) return done(err)
+    this.timeout(3000)
+    var users;
 
-      var users = JSON.parse(res.body).list
-
-      function recurse_join_all(args, callback)
-      {
-        if (!args.users) return callback(new Error('no users specified'))
-        if (args.users.length === 0) return callback()
-
-        if (!args.event) return callback(new Error('no event specified'))
-
-        var user = args.users[args.users.length - 1]
-        var auth = user.nick === 'admin' ? 'admin' : 'p' + user.nick.slice(1)
-        helper.join({event:args.event, login:user.nick, password:auth}, function(err){
-          if (err) return callback(err)
-
-            args.users.pop()
-            recurse_join_all(args, callback)
+    async.series([
+      function (next) {
+        helper.auth_get({url:'/data-editor/rest/sys%2Fuser', status:200, type:'json'}, function(err, res) {
+          users = JSON.parse(res.body).list
+          return next(err)
         })
-      }
-
-      // Add all users to event C with 4 teams
-      recurse_join_all({event:'mc', users:users}, function(err){
-        if (err) return done(err)
-
-    // Get all teams' ids
-    ;helper.auth_get({url:'/data-editor/rest/team', status:200, type:'json'}, function(err, res){
-      if (err) return done(err)
-        var teams = JSON.parse(res.body).list
-        teams = teams.filter(function(team){
-          return team.eventcode === 'mc'
+      },
+      function (next) {
+        function join (user, event, next) {
+          var id = user.nick === 'admin' ? 0 : user.nick.slice(1)
+          var pass = user.nick === 'admin' ? 'admin' : 'p' + id
+          helper.join({event:event, login:user.nick, password:pass}, next)
+        }
+        // Add all users to event C with 4 teams
+        var requests = []
+        _.each(users, function (user) {
+          requests.push(join.bind(null, user, 'mc'))
         })
+        async.series(requests, next) // cannot use parallel because app randomly drops several requests
+      },
+      function (next) {
+        helper.auth_get({url:'/data-editor/rest/team', status:200, type:'json'}, function(err, res){
+          if (err) return next(err)
+          var teams = JSON.parse(res.body).list
+          teams = teams.filter(function(team){
+            return team.eventcode === 'mc'
+          })
 
-        // Add up all users in event's teams returned by (..)/members/:team
-        var users_joined = 0
-        _.each(teams, function(team){
-          _.each(team.users, function(member){
-          users_joined++
-        })
-          if (teams.indexOf(team) < teams.length - 1) return
+          // Add up all users in event's teams returned by (..)/members/:team
+          var users_joined = 0
+          _.each(teams, function(team){
+            _.each(team.users, function(member){
+              users_joined++
+            })
+          })
 
           // See if it corresponds to the actual number of users added
           assert.equal(users_joined, 17)
-          
-      done()
-    }) }) }) })
+          return next()
+        })
+      },
+    ], done)
+
   })
 
   it('well/:event/player/member/:other', function(done){
@@ -186,11 +184,11 @@ describe('acceptance testing', function(){
 // ---
 // Utility Functions
 
-function test_entity(entity, callback) {
+function test_entity(entity, cb) {
   helper.auth_get({url:'/data-editor/rest/' + entity, status:200, type:'json'}, function(err, res) {
-    if (err) return callback(err)
+    if (err) return cb(err)
     
     assert.equal(JSON.parse(res.body).list.length > 0, true);
-    callback()
+    cb()
   })
 }
