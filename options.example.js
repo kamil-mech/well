@@ -77,7 +77,11 @@ module.exports = {
       // --link and -e db= will be added automatically.
       // if it exposes a port in dockerfile, tester will automatically
       // wait for it to start listening before booting next.
-      dockimages:['well-app']
+      dockimages:[
+        'well-app',
+        { name: 'well-app', testTarget: true }
+      ],
+      deploymode: 'series' // 'series' or 'parallel'
   },
 
   // options for memcached
