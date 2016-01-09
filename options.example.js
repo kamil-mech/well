@@ -70,20 +70,6 @@ module.exports = {
     schema: __dirname + '/test/dbs/mysql.sql' // used by seneca-db-test-harness
   },
 
-  // options for db test
-  'dbt':{
-      // docker images to run.
-      // use -d to run without additional terminal.
-      // --link and -e db= will be added automatically.
-      // if it exposes a port in dockerfile, tester will automatically
-      // wait for it to start listening before booting next.
-      dockimages:[
-        'well-app',
-        { name: 'well-app', testTarget: true }
-      ],
-      deploymode: 'series' // 'series' or 'parallel'
-  },
-
   // options for memcached
   memcached:{
     servers:['127.0.0.1:11211']
