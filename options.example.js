@@ -46,11 +46,11 @@ module.exports = {
 
   // options for seneca-postgresql-store
   'postgresql-store':{
-    username:'admin',
-    password:'password',
+    username:'well-user',
+    password:'well-password',
     host:process.env.POSTGRESQL_PORT_5432_TCP_ADDR || process.env.POSTGRES_PORT_5432_TCP_ADDR || 'localhost',
     port:process.env.POSTGRESQL_PORT_5432_TCP_PORT || 5432,
-    name:'admin', // because of the way docker image works it has to be same as username
+    name:'well-database',
     schema: __dirname + '/test/dbs/postgres.sql' // used by seneca-db-test-harness
   },
 
