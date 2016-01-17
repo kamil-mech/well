@@ -64,9 +64,9 @@ module.exports = {
   'mysql-store':{
     host:process.env.MYSQL_PORT_3306_TCP_ADDR || 'localhost',
     port:process.env.MYSQL_PORT_3306_TCP_PORT || 3306,
-    user:'root', // to keep things simple this has to be root
-    password:'password',
-    name:'admin',
+    user:'well-user',
+    password:'well-password',
+    name:'well-database',
     schema: __dirname + '/test/dbs/mysql.sql' // used by seneca-db-test-harness
   },
 
