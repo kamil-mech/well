@@ -65,3 +65,4 @@ CREATE TABLE session (
   "data" JSON NOT NULL,
   PRIMARY KEY ("id")
 );
+
