@@ -63,7 +63,7 @@ load_options(seneca)
 // docker run -v /home/deploy/test:/test -p 3333:3333 --rm -e db=mem-store well-app
 
 // for dbs using seneca-transport
-var networkless_dbs = ['mem-store', 'jsonfile-store']
+var networkless_dbs = ['mem-store', 'jsonfile-store', 'level-store']
 if (!db) db = 'mem-store'
 
 console.log('\nusing ' + db + ' db')
@@ -77,17 +77,9 @@ if (networkless_dbs.indexOf(db) === -1) {
 
   sl.host(db, function(server_config){
     setTimeout(function(){
-      seneca
-      .client(server_config)
-      .ready(function(){
-        // NOTE: pins are used to expose actions
-        // in case of db we are interested in entity oriented actions
-
-        seneca = this
-        // apply options
-        load_options(seneca)
-        ready()
-      })
+      seneca = seneca.client(server_config)
+      load_options(seneca)
+      ready()
     }, 2000)
   })
 }
